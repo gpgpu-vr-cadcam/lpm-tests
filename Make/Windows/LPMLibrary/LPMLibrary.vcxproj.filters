@@ -4,15 +4,32 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{8fb4bf60-43b4-4c4d-a2d6-5895ffa79ebb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{c672559b-7f29-4c85-934c-94e38b0308db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{93bcb101-fb7d-40c4-99ca-056be5b841ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\Utils\Utils.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Core\IPSet.cuh">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Tests\Tests.h">
+      <Filter>Tests</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\Utils\Utils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\..\Source\Core\IPSet.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

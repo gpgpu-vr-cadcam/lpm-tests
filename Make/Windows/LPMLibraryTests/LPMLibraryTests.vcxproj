@@ -24,6 +24,9 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\Tests\IPSetTests.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C095188B-104D-459C-AE9F-9EDB49636C1D}</ProjectGuid>
     <RootNamespace>GenomicInteractionsTests</RootNamespace>

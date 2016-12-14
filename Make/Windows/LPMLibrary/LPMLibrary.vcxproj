@@ -19,10 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Source\Core\IPSet.cuh" />
+    <ClInclude Include="..\..\..\Source\Tests\Tests.h" />
     <ClInclude Include="..\..\..\Source\Utils\Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\Utils\Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\..\Source\Core\IPSet.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E0152BAE-AB6D-478B-85DD-C17CC1E2941E}</ProjectGuid>
