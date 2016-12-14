@@ -29,16 +29,39 @@ class IPSetTest
 public:
 	TestFile File;
 	GpuSetup Setup;
+	int MasksToLoad;
 
-	IPSetTest(TestFile& file, GpuSetup& setup)
+
+	IPSetTest(const TestFile& file, const GpuSetup& setup, int masksToLoad)
 		: File(file),
-		  Setup(setup) {}
+		  Setup(setup),
+		  MasksToLoad(masksToLoad) {}
+
 
 	friend std::ostream& operator<<(std::ostream& os, const IPSetTest& obj)
 	{
 		return os
 			<< "File: " << obj.File
-			<< " Setup: " << obj.Setup;
+			<< " Setup: " << obj.Setup
+			<< " MasksToLoad: " << obj.MasksToLoad;
+	}
+};
+
+class IPSubsetTest : public IPSetTest
+{
+public:
+	int SubsetSize;
+
+
+	IPSubsetTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size)
+		: IPSetTest(file, setup, masksToLoad),
+		  SubsetSize(subset_size) {}
+
+	friend std::ostream& operator<<(std::ostream& os, const IPSubsetTest& obj)
+	{
+		return os
+			<< static_cast<const IPSetTest&>(obj)
+			<< " SubsetSize: " << obj.SubsetSize;
 	}
 };
 
@@ -49,11 +72,12 @@ public:
 	vector<TestFile> Files;
 	vector<GpuSetup> Setups;
 	vector<IPSetTest> IPSetTests;
+	vector<IPSubsetTest> SubsetTests;
 
 	void InitFiles()
 	{
 		Files.push_back(TestFile("../../../TestData/data-raw-table_australia_012016.txt", 565949));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_australia_092016.txt", 420207));
+		Files.push_back(TestFile("../../../TestData/data-raw-table_australia_092016.txt", 420206));
 		Files.push_back(TestFile("../../../TestData/data-raw-table_honkkong_012016.txt", 565907));
 		Files.push_back(TestFile("../../../TestData/data-raw-table_honkkong_092016.txt", 602812));
 		Files.push_back(TestFile("../../../TestData/data-raw-table_london_012016.txt", 564426));
@@ -78,9 +102,21 @@ public:
 
 	void InitIPSetTests()
 	{
+		vector<int> masksToLoad = { 100000, 200000 };
+
 		for (auto f : Files)
 			for (auto s : Setups)
-				IPSetTests.push_back(IPSetTest(f, s));
+				for(auto m : masksToLoad)
+					IPSetTests.push_back(IPSetTest(f, s, m));
+	}
+
+	void InitSubsetTests()
+	{
+		vector<int> subsetSizes = { 50000, 75000 };
+
+		for (auto t : IPSetTests)
+			for (auto s : subsetSizes)
+				SubsetTests.push_back(IPSubsetTest(t.File, t.Setup, t.MasksToLoad, s));
 	}
 
 	Environment()
@@ -88,6 +124,7 @@ public:
 		InitFiles();
 		InitSetups();
 		InitIPSetTests();
+		InitSubsetTests();
 	}
 };
 
