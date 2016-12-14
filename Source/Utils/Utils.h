@@ -20,6 +20,7 @@ inline void GpuAssert(cudaError_t code, const char *msg)
 		string m(msg);
 		m.append(": ");
 		m.append(cudaGetErrorString(code));
+		cerr << msg << endl;
 		throw runtime_error(m.c_str());
 	}
 		

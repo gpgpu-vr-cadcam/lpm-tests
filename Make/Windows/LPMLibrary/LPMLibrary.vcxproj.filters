@@ -10,6 +10,9 @@
     <Filter Include="Tests">
       <UniqueIdentifier>{93bcb101-fb7d-40c4-99ca-056be5b841ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Matchers">
+      <UniqueIdentifier>{480c5a4f-d951-4484-aea1-f3dd2938eb9a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\Utils\Utils.h">
@@ -21,6 +24,12 @@
     <ClInclude Include="..\..\..\Source\Tests\Tests.h">
       <Filter>Tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\Source\Matchers\BaseMatcher.cuh">
+      <Filter>Matchers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh">
+      <Filter>Matchers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\Utils\Utils.cpp">
@@ -30,6 +39,9 @@
   <ItemGroup>
     <CudaCompile Include="..\..\..\Source\Core\IPSet.cu">
       <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\..\Source\Matchers\TreeMatcher.cu">
+      <Filter>Matchers</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>
