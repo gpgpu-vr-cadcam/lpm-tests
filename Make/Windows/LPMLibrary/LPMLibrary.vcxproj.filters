@@ -24,11 +24,11 @@
     <ClInclude Include="..\..\..\Source\Tests\Tests.h">
       <Filter>Tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Source\Matchers\BaseMatcher.cuh">
-      <Filter>Matchers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh">
       <Filter>Matchers</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseResult.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -20,7 +20,7 @@ inline void GpuAssert(cudaError_t code, const char *msg)
 		string m(msg);
 		m.append(": ");
 		m.append(cudaGetErrorString(code));
-		cerr << msg << endl;
+		cerr << msg << "   Error code:" << code << endl;
 		throw runtime_error(m.c_str());
 	}
 		
@@ -100,3 +100,28 @@ struct Rnd
 };
 
 void SplitLine(const string& str, const string& delim, vector<string>& parts);
+
+class Timer
+{
+private:
+	cudaEvent_t StartEvent, StopEvent;
+
+public:
+	void Start()
+	{
+		GpuAssert(cudaEventCreate(&StartEvent), "Cannot create StartEvent");
+		GpuAssert(cudaEventCreate(&StopEvent), "Cannot create StopEvent");
+		GpuAssert(cudaEventRecord(StartEvent, 0), "Cannot record StartEvent");
+	}
+
+	float Stop()
+	{
+		GpuAssert(cudaEventRecord(StopEvent, 0), "Cannot record StopEvent");
+		GpuAssert(cudaEventSynchronize(StopEvent), "Cannot synchronize StopEvent");
+
+		float time;
+		GpuAssert(cudaEventElapsedTime(&time, StartEvent, StopEvent), "Cannot get elapsed time");
+		
+		return time;
+	}
+};

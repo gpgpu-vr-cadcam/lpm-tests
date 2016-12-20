@@ -105,7 +105,7 @@ __global__ void print_ranges(int * dev_prefixes_start, int * dev_prefixes_end)
 	}
 
 }
-__global__ void prepare_submits_indxes(unsigned int * dev_subnets_indx, int size)
+__global__ void PrepareSubnetsIndxes(unsigned int * dev_subnets_indx, int size)
 {
 	int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < size)
@@ -119,7 +119,7 @@ __global__ void print2dlist(unsigned char * dev_list, unsigned int * dev_subnets
 	}
 }
 
-__global__ void prepare_levels(int * dev_level8, int * dev_level16, int * dev_level24)
+__global__ void PrepareLevels(int * dev_level8, int * dev_level16, int * dev_level24)
 {
 	int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < 256 * 256 * 256)
@@ -156,7 +156,7 @@ __global__ void print_subnets_bits(unsigned char * dev_subnets, unsigned int  * 
 	}
 
 }
-__global__ void initialize_tree_node(unsigned int * dev_temp_flag, int * dev_temp_Indx, int ** dev_tree, int * dev_real_values, int * dev_level, int level
+__global__ void InitializeTreeNode(unsigned int * dev_temp_flag, int * dev_temp_Indx, int ** dev_tree, int * dev_real_values, int * dev_level, int level
 	, int totalNodes)
 {
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
@@ -206,7 +206,7 @@ __global__ void initialize_tree_node(unsigned int * dev_temp_flag, int * dev_tem
 		}
 	}
 }
-__global__ void initialize_tree_level(int ** dev_tree, int level, int count, int * dev_level_nodes)
+__global__ void InitializeTreeLevel(int ** dev_tree, int level, int count, int * dev_level_nodes)
 {
 	dev_tree[level] = new  int[count * 5];
 	dev_level_nodes[level] = count;
@@ -219,7 +219,7 @@ __global__ void initialize_tree_level_16(int ** dev_tree, int level, int count, 
 		dev_tree[level][i] = -1;
 }
 
-__global__ void get_prefixes_ranges(char* dev_sorted_subnets_bits, int * dev_prefixes_start, int * dev_prefixes_end, int size)
+__global__ void GetPrefixesRanges(char* dev_sorted_subnets_bits, int * dev_prefixes_start, int * dev_prefixes_end, int size)
 {
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread >= size)
@@ -248,7 +248,7 @@ __global__ void get_prefixes_ranges(char* dev_sorted_subnets_bits, int * dev_pre
 		dev_prefixes_end[dev_sorted_subnets_bits[thread * 33 + 32] - 1] = thread;
 }
 
-__global__ void prepare_sorted_subnets_bits_list(unsigned char * dev_subnets, char * dev_sorted_subnets_bits, unsigned int * dev_subnets_indx, int size)
+__global__ void PrepareSortedSubnetsBitsList(unsigned char * dev_subnets, char * dev_sorted_subnets_bits, unsigned int * dev_subnets_indx, int size)
 {
 	int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < size)
@@ -273,7 +273,7 @@ __global__ void prepare_sorted_subnets_bits_list(unsigned char * dev_subnets, ch
 	}
 }
 
-__global__ void initialize_tree_root(int ** dev_tree, int * dev_level_nodes)
+__global__ void InitializeTreeRoot(int ** dev_tree, int * dev_level_nodes)
 {
 	dev_tree[0] = new int[5];
 	dev_tree[0][0] = -1;
@@ -332,7 +332,7 @@ __device__ int find_node_prefix(char* node_prefix, char * dev_sorted_subnets_bit
 }
 
 
-__global__ void flag_bit_location(unsigned int * dev_temp_flag, int * dev_temp_Indx, char * dev_sorted_subnets_bits, int ** dev_tree, int * dev_prefixes_start, int * dev_prefixes_end, char * currentNodePrefix, int * dev_real_values, int level_max, int level, int subnets_size, int totalelements)
+__global__ void FlagBitLocation(unsigned int * dev_temp_flag, int * dev_temp_Indx, char * dev_sorted_subnets_bits, int ** dev_tree, int * dev_prefixes_start, int * dev_prefixes_end, char * currentNodePrefix, int * dev_real_values, int level_max, int level, int subnets_size, int totalelements)
 {
 	int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < totalelements)
@@ -478,7 +478,7 @@ __device__ int search_between_two_levels(int low_level, int top_level, unsigned 
 
 
 }
-__global__ void assign_ip_subnet_old(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int * dev_level8, int * dev_level16,
+__global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int * dev_level8, int * dev_level16,
 	int * dev_level24, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end, unsigned int  * time_thread)
 {
 	__shared__ int * shared_dev_tree[33];
@@ -633,7 +633,7 @@ __global__ void assign_ip_subnet_old(int ** dev_tree, unsigned int * dev_ips_lis
 
 }
 
-__global__ void assign_ip_subnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end, unsigned int  * time_thread)
+__global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end, unsigned int  * time_thread)
 {
 	__shared__ int * shared_dev_tree[33];
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
@@ -701,82 +701,77 @@ __global__ void print_level(int * dev_level, int size)
 }
 
 
-void convert_from_bits(char * dev_in_bits, unsigned char * out_byte)
+void TreeResult::ConvertFromBits(char * inBits, unsigned char * outByte)
 {
 	unsigned char maskValues[8] = { 128, 64, 32, 16, 8, 4, 2, 1 };
 	for (int j = 0; j < 4; j++)
 	{
-		out_byte[j] = 0;
+		outByte[j] = 0;
 		for (int i = 0; i < 8; i++)
 		{
-			if (dev_in_bits[j * 8 + i] == 1)
-				out_byte[j] += maskValues[i];
+			if (inBits[j * 8 + i] == 1)
+				outByte[j] += maskValues[i];
 		}
 	}
-
-
-
 }
 
-void printresult(int * dev_matched_indx, int searched_ips, char* dev_sorted_subnets_bits, unsigned int * dev_ip_list, int print_type)
+int TreeResult::CountMatched()
 {
-	//if (print_type == 0) return;
-	for (int i = 0; i < searched_ips; i++)
-	{
+	int unmatched = 0;
+	for (int i = 0; i < IPsListSize; ++i)
+		if (MatchedIndexes[i] < 0)
+			unmatched++;
 
-		if (dev_matched_indx[i] > -1)
+	return IPsListSize - unmatched;
+}
+
+void TreeResult::PrintResult()
+{
+	if(MatchedIndexes == NULL || SortedSubnetsBits == NULL || IPsList == NULL)
+		return;
+
+	for (int i = 0; i < IPsListSize; i++)
+	{
+		if (MatchedIndexes[i] > -1)
 		{
-			if (print_type == 0) continue;
-			if (i % print_type != 0)
+			if (i % PrintJump != 0)
 				continue;
+
 			unsigned char * submit = new unsigned char[5];
-			convert_from_bits(dev_sorted_subnets_bits + dev_matched_indx[i] * 33, submit);
-			submit[4] = dev_sorted_subnets_bits[dev_matched_indx[i] * 33 + 32];
-			printf("IP_ID: %d -> sIndx: %d - ip: %d.%d.%d.%d --> subnet: %d.%d.%d.%d/%d\n", i, dev_matched_indx[i], ((dev_ip_list[i] & 4278190080) >> 24), ((dev_ip_list[i] & 16711680) >> 16), ((dev_ip_list[i] & 65280) >> 8), (dev_ip_list[i] & 255), submit[0], submit[1], submit[2], submit[3], submit[4]);
+			ConvertFromBits(SortedSubnetsBits + MatchedIndexes[i] * 33, submit);
+			submit[4] = SortedSubnetsBits[MatchedIndexes[i] * 33 + 32];
+			printf("ip: %d.%d.%d.%d --> subnet: %d.%d.%d.%d/%d\n", ((IPsList[i] & 4278190080) >> 24), ((IPsList[i] & 16711680) >> 16), ((IPsList[i] & 65280) >> 8), (IPsList[i] & 255), submit[0], submit[1], submit[2], submit[3], submit[4]);
 		}
 		else
-			printf("IP_ID : %d -> ip: %d.%d.%d.%d ->  sIndx :  %d\n", i, ((dev_ip_list[i] & 4278190080) >> 24), ((dev_ip_list[i] & 16711680) >> 16), ((dev_ip_list[i] & 65280) >> 8), (dev_ip_list[i] & 255), dev_matched_indx[i]);
-
+			printf("IP_ID : %d -> ip: %d.%d.%d.%d ->  sIndx :  %d\n", i, ((IPsList[i] & 4278190080) >> 24), ((IPsList[i] & 16711680) >> 16), ((IPsList[i] & 65280) >> 8), (IPsList[i] & 255), MatchedIndexes[i]);
 	}
-
-
 }
 
 void TreeMatcher::BuildModel(IPSet set)
 {
 	Setup = set.Setup;
+	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
+	Timer timer;
+	timer.Start();
 
+	Tree.Setup = Setup;
+	Tree.Size = set.Size;
 	int chunks = set.Size / 50000 + 1;
 
 	// Host Variables:
-	char * sorted_subnets_bits = nullptr;
+	char * sortedSubnetsBits = nullptr;
 	int * matchedIndexes = nullptr;
 	int * minus_one;
-	int * prefixes_start;
-	int * prefixes_end;
-
+	int * prefixesStart;
+	int * prefixesEnd;
 
 	// Decvice Variables
-
 	thrust::device_ptr<unsigned int> dev_subnets_indx_ptr;
-	unsigned int * dev_subnets_indx;
-	int * dev_prefixes_start;
-	int * dev_prefixes_end;
-	char * dev_node_prefix;
-	int ** dev_tree;
-	char * dev_sorted_subnets_bits;
-	unsigned int * dev_temp_flag;
-	int * dev_temp_Indx;
-	int * dev_real_values;
-	int * dev_full_level;
-	int * dev_level8;
-	int * dev_level16;
-	int * dev_level24;
-	int * dev_full_level_0;
-	int * dev_full_level_1;
-	int * dev_full_level_2;
-	int * dev_level_nodes;
-
+	char * d_NodePrefix;
+	unsigned int * d_TempFlag;
+	int * d_TempIndx;
+	int * d_RealValues;
+	int * d_FullLevel;
 
 	// Threads Variables
 	int resetThreads;
@@ -784,74 +779,29 @@ void TreeMatcher::BuildModel(IPSet set)
 	int threads;
 	int blocks;
 
+	GpuAssert(cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8000000 * chunks), "Cannot set cuda limit malloc heap size.");
 
-	cudaError_t cudaStatus;
-	cudaStatus = cudaSetDevice(Setup.DeviceID);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-	}
-	cudaStatus = cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8000000 * chunks);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "set device heap limit failed!");
-	}
 	// Allocate GPU buffers for subnetmasks vector.
-	cudaStatus = cudaMalloc((void**)&dev_sorted_subnets_bits, 33 * set.Size * sizeof(char));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
+	GpuAssert(cudaMalloc((void**)&Tree.d_SortedSubnetBits, 33 * set.Size * sizeof(char)), "Cannot allocate memory for d_SortedSubnetBits");
+	GpuAssert(cudaMalloc((void**)&Tree.d_SubnetsIndx, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_SubnetsIndx");
+	GpuAssert(cudaMalloc((void**)&Tree.d_Tree, 33 * sizeof(int *)), "Cannot allocate memory for d_Tree");
+	GpuAssert(cudaMalloc((void**)&Tree.d_PrefixesStart, 32 * sizeof(int)), "Cannot allocate memory for d_PrefixesStart");
+	GpuAssert(cudaMalloc((void**)&Tree.d_PrefixesEnd, 32 * sizeof(int)), "Cannot allocate memory for d_PrefixesEnd");
 
-	cudaStatus = cudaMalloc((void**)&dev_subnets_indx, set.Size * sizeof(unsigned int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-
-	cudaStatus = cudaMalloc((void**)&dev_tree, 33 * sizeof(int *));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-
-
-	cudaStatus = cudaMalloc((void**)&dev_prefixes_start, 32 * sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-
-	cudaStatus = cudaMalloc((void**)&dev_prefixes_end, 32 * sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-
-	prefixes_start = new int[32];
-	prefixes_end = new int[32];
+	prefixesStart = new int[32];
+	prefixesEnd = new int[32];
 
 	minus_one = new int[33];
 	for (int i = 0; i < 33; i++)
 		minus_one[i] = -1;
 
-	cudaStatus = cudaMemcpy(dev_prefixes_start, minus_one, 32 * sizeof(int), cudaMemcpyHostToDevice);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
-	}
-
-
-	cudaStatus = cudaMemcpy(dev_prefixes_end, minus_one, 32 * sizeof(int), cudaMemcpyHostToDevice);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
-	}
+	GpuAssert(cudaMemcpy(Tree.d_PrefixesStart, minus_one, 32 * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy memory to d_PrefixesStart");
+	GpuAssert(cudaMemcpy(Tree.d_PrefixesEnd, minus_one, 32 * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy memory to d_PrefixesEnd");
 
 	// prepare levels
-	cudaStatus = cudaMalloc((void**)&dev_level16, 256 * 256 * sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-	cudaStatus = cudaMalloc((void**)&dev_level24, 256 * 256 * 256 * sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-	cudaStatus = cudaMalloc((void**)&dev_level8, 256 * sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
+	GpuAssert(cudaMalloc((void**)&Tree.d_Level16, 256 * 256 * sizeof(int)), "Cannot allocate memory for d_Level16");
+	GpuAssert(cudaMalloc((void**)&Tree.d_Level24, 256 * 256 * 256 * sizeof(int)), "Cannot allocate memory for d_Level24");
+	GpuAssert(cudaMalloc((void**)&Tree.d_Level8, 256 * sizeof(int)), "Cannot allocate memory for d_Level8");
 
 	/// prepare Subnets Indexes
 	resetThreads = Setup.Threads;
@@ -859,11 +809,9 @@ void TreeMatcher::BuildModel(IPSet set)
 	if (16777216 % resetThreads > 0)
 		resetBlocks++;
 
-	prepare_levels << <resetBlocks, resetThreads >> >(dev_level8, dev_level16, dev_level24);
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching prepare_levels!\n", cudaStatus);
-	}
+	PrepareLevels << <resetBlocks, resetThreads >> >(Tree.d_Level8, Tree.d_Level16, Tree.d_Level24);
+	GpuAssert(cudaGetLastError(), "Error while launching PrepareLevels kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareLevels kernel");
 
 	resetThreads = Setup.Threads;
 	resetBlocks = 1;
@@ -875,87 +823,52 @@ void TreeMatcher::BuildModel(IPSet set)
 			resetBlocks++;
 	}
 
-	prepare_submits_indxes << <resetBlocks, resetThreads >> >(dev_subnets_indx, set.Size);
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching prepare_submits_indxes!\n", cudaStatus);
-	}
+	PrepareSubnetsIndxes << <resetBlocks, resetThreads >> >(Tree.d_SubnetsIndx, set.Size);
+	GpuAssert(cudaGetLastError(), "Error while launching PrepareSubnetsIndxes kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareSubnetsIndxes kernel");
+
+
 	// Sorting Subnets
-	dev_subnets_indx_ptr = thrust::device_pointer_cast(dev_subnets_indx);
+	dev_subnets_indx_ptr = thrust::device_pointer_cast(Tree.d_SubnetsIndx);
 	thrust::sort(dev_subnets_indx_ptr, dev_subnets_indx_ptr + set.Size, my_sort_functor(5, thrust::raw_pointer_cast(set.d_IPData)));
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching stable_sort!\n", cudaStatus);
-	}
 
-	prepare_sorted_subnets_bits_list << <resetBlocks, resetThreads >> >(set.d_IPData, dev_sorted_subnets_bits, dev_subnets_indx, set.Size);
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching prepare_sorted_subnets_bits_list!\n", cudaStatus);
-	}
-	get_prefixes_ranges << <resetBlocks, resetThreads >> >(dev_sorted_subnets_bits, dev_prefixes_start, dev_prefixes_end, set.Size);
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching get_prefixes_ranges!\n", cudaStatus);
-	}
+	PrepareSortedSubnetsBitsList << <resetBlocks, resetThreads >> >(set.d_IPData, Tree.d_SortedSubnetBits, Tree.d_SubnetsIndx, set.Size);
+	GpuAssert(cudaGetLastError(), "Error while launching PrepareSortedSubnetsBitsList kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareSortedSubnetsBitsList kernel");
 
-	cudaStatus = cudaMemcpy(prefixes_start, dev_prefixes_start, 32 * sizeof(int), cudaMemcpyDeviceToHost);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
-	}
-	cudaStatus = cudaMemcpy(prefixes_end, dev_prefixes_end, 32 * sizeof(int), cudaMemcpyDeviceToHost);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
-	}
+	GetPrefixesRanges << <resetBlocks, resetThreads >> >(Tree.d_SortedSubnetBits, Tree.d_PrefixesStart, Tree.d_PrefixesEnd, set.Size);
+	GpuAssert(cudaGetLastError(), "Error while launching GetPrefixesRanges kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running GetPrefixesRanges kernel");
 
-	int min_prefix;
+	GpuAssert(cudaMemcpy(prefixesStart, Tree.d_PrefixesStart, 32 * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy memory to prefixesStart");
+	GpuAssert(cudaMemcpy(prefixesEnd, Tree.d_PrefixesEnd, 32 * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy memory to prefixesEnd");
+
 	for (int i = 0; i < 32; i++)
-		if (prefixes_start[i] != -1)
+		if (prefixesStart[i] != -1)
 		{
-			min_prefix = i + 1;
+			Tree.MinPrefix = i + 1;
 			break;
 		}
-	printf("Min Prefix : %d \n", min_prefix);
 
 	int previousLevelChildren;
 	previousLevelChildren = 2;
 
+	GpuAssert(cudaMalloc((void**)&Tree.d_LevelNodes, 33 * sizeof(int)), "Cannot allocate memory for d_LevelNodes");
+	GpuAssert(cudaMemcpy(Tree.d_LevelNodes, minus_one, 33 * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy memory to d_LevelNodes");
 
+	InitializeTreeRoot << <1, 1 >> >(Tree.d_Tree, Tree.d_LevelNodes);
+	GpuAssert(cudaGetLastError(), "Error while launching InitializeTreeRoot kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running InitializeTreeRoot kernel");
 
-	cudaStatus = cudaMalloc((void**)&dev_level_nodes, 33 * sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-
-	cudaStatus = cudaMemcpy(dev_level_nodes, minus_one, 33 * sizeof(int), cudaMemcpyHostToDevice);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
-	}
-	initialize_tree_root << <1, 1 >> >(dev_tree, dev_level_nodes);
 	for (int level = 1; level < 33; level++)
 	{
-		//printf("level:  %d  -> %d\n", level, previousLevelChildren);
-		dev_real_values = NULL;
-		cudaStatus = cudaMalloc((void**)&dev_temp_flag, previousLevelChildren * sizeof(unsigned int));
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed! dev_temp_flag");
-		}
-		cudaStatus = cudaMalloc((void**)&dev_temp_Indx, previousLevelChildren * sizeof(int));
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed! dev_temp_Indx");
-		}
-		cudaStatus = cudaMalloc((void**)&dev_node_prefix, level * previousLevelChildren * sizeof(char));
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed! dev_temp_Indx");
-		}
+		d_RealValues = NULL;
+		GpuAssert(cudaMalloc((void**)&d_TempFlag, previousLevelChildren * sizeof(unsigned int)), "Cannot allocate memory for d_TemFlag");
+		GpuAssert(cudaMalloc((void**)&d_TempIndx, previousLevelChildren * sizeof(int)), "Cannot allocate memory for d_TempIndx");
+		GpuAssert(cudaMalloc((void**)&d_NodePrefix, level * previousLevelChildren * sizeof(char)), "Cannot allocate memory for d_NodePrefix");
 
 		if (level == 8 || level == 16 || level == 24)
-		{
-			cudaStatus = cudaMalloc((void**)&dev_real_values, previousLevelChildren * sizeof(int));
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMalloc failed! dev_temp_Indx");
-			}
-		}
+			GpuAssert(cudaMalloc((void**)&d_RealValues, previousLevelChildren * sizeof(int)), "Cannot allocate memory for d_RealValues");
 
 		threads = Setup.Threads;
 		blocks = 1;
@@ -968,86 +881,170 @@ void TreeMatcher::BuildModel(IPSet set)
 		}
 
 		if (level == 8)
-			flag_bit_location << <blocks, threads >> >(dev_temp_flag, dev_temp_Indx, dev_sorted_subnets_bits, dev_tree, dev_prefixes_start, dev_prefixes_end, dev_node_prefix, dev_real_values, 8, level, set.Size, previousLevelChildren);
+			FlagBitLocation << <blocks, threads >> >(d_TempFlag, d_TempIndx, Tree.d_SortedSubnetBits, Tree.d_Tree, Tree.d_PrefixesStart, Tree.d_PrefixesEnd, d_NodePrefix, d_RealValues, 8, level, set.Size, previousLevelChildren);
 		else if (level == 16)
-			flag_bit_location << <blocks, threads >> >(dev_temp_flag, dev_temp_Indx, dev_sorted_subnets_bits, dev_tree, dev_prefixes_start, dev_prefixes_end, dev_node_prefix, dev_real_values, 16, level, set.Size, previousLevelChildren);
+			FlagBitLocation << <blocks, threads >> >(d_TempFlag, d_TempIndx, Tree.d_SortedSubnetBits, Tree.d_Tree, Tree.d_PrefixesStart, Tree.d_PrefixesEnd, d_NodePrefix, d_RealValues, 16, level, set.Size, previousLevelChildren);
 		else if (level == 24)
-			flag_bit_location << <blocks, threads >> >(dev_temp_flag, dev_temp_Indx, dev_sorted_subnets_bits, dev_tree, dev_prefixes_start, dev_prefixes_end, dev_node_prefix, dev_real_values, 24, level, set.Size, previousLevelChildren);
+			FlagBitLocation << <blocks, threads >> >(d_TempFlag, d_TempIndx, Tree.d_SortedSubnetBits, Tree.d_Tree, Tree.d_PrefixesStart, Tree.d_PrefixesEnd, d_NodePrefix, d_RealValues, 24, level, set.Size, previousLevelChildren);
 		else
-			flag_bit_location << <blocks, threads >> >(dev_temp_flag, dev_temp_Indx, dev_sorted_subnets_bits, dev_tree, dev_prefixes_start, dev_prefixes_end, dev_node_prefix, NULL, -1, level, set.Size, previousLevelChildren);
+			FlagBitLocation << <blocks, threads >> >(d_TempFlag, d_TempIndx, Tree.d_SortedSubnetBits, Tree.d_Tree, Tree.d_PrefixesStart, Tree.d_PrefixesEnd, d_NodePrefix, NULL, -1, level, set.Size, previousLevelChildren);
+		GpuAssert(cudaGetLastError(), "Error while launching FlagBitLocation kernel");
+		GpuAssert(cudaDeviceSynchronize(), "Error while running FlagBitLocation kernel");
 
-
-
-
-		thrust::device_ptr< unsigned int> dev_temp_flag_ptr(dev_temp_flag);
-
-		thrust::inclusive_scan(dev_temp_flag_ptr, dev_temp_flag_ptr + previousLevelChildren, dev_temp_flag_ptr);
-
+		thrust::device_ptr< unsigned int> d_TempFlagPtr(d_TempFlag);
+		thrust::inclusive_scan(d_TempFlagPtr, d_TempFlagPtr + previousLevelChildren, d_TempFlagPtr);
 
 		int total;
-
-		cudaStatus = cudaMemcpy(&total, dev_temp_flag + previousLevelChildren - 1, sizeof(int), cudaMemcpyDeviceToHost);
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed! total");
-		}
-		//printf("level : %d  total: %d\n", level, total);
+		GpuAssert(cudaMemcpy(&total, d_TempFlag + previousLevelChildren - 1, sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy memory to total");
 		if (total == 0)
 			break;
 
-		initialize_tree_level << <1, 1 >> >(dev_tree, level, total, dev_level_nodes);
-		cudaStatus = cudaDeviceSynchronize();
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching initialize_tree_level!\n", cudaStatus);
-		}
+		InitializeTreeLevel << <1, 1 >> >(Tree.d_Tree, level, total, Tree.d_LevelNodes);
+		GpuAssert(cudaGetLastError(), "Error while launching InitializeTreeLevel kernel");
+		GpuAssert(cudaDeviceSynchronize(), "Error while running InitializeTreeLevel kernel");
+
 		if (level == 8)
-			dev_full_level = dev_level8;
+			d_FullLevel = Tree.d_Level8;
 		else if (level == 16)
-			dev_full_level = dev_level16;
+			d_FullLevel = Tree.d_Level16;
 		else
-			dev_full_level = dev_level24;
+			d_FullLevel = Tree.d_Level24;
 
-		initialize_tree_node << <blocks, threads >> >(dev_temp_flag, dev_temp_Indx, dev_tree, dev_real_values, dev_full_level, level, previousLevelChildren);
-		GpuAssert(cudaPeekAtLastError(), "Error while launching initialize_tree_node kernel");
-		GpuAssert(cudaDeviceSynchronize(), "Error while running initialize_tree_node kernel");
-
+		InitializeTreeNode << <blocks, threads >> >(d_TempFlag, d_TempIndx, Tree.d_Tree, d_RealValues, d_FullLevel, level, previousLevelChildren);
+		GpuAssert(cudaGetLastError(), "Error while launching InitializeTreeNode kernel");
+		GpuAssert(cudaDeviceSynchronize(), "Error while running InitializeTreeNode kernel");
 
 		previousLevelChildren = total * 2;
-		cudaFree(dev_temp_flag);
-		cudaFree(dev_temp_Indx);
-		cudaFree(dev_node_prefix);
+		GpuAssert(cudaFree(d_TempFlag), "Cannot free d_TempFlag");
+		GpuAssert(cudaFree(d_TempIndx), "Cannot free d_TempIndx");
+		GpuAssert(cudaFree(d_NodePrefix), "Cannot free d_NodePrefix");
 		if (level == 8 || level == 16 || level == 24)
-			cudaFree(dev_real_values);
-		//print_tree << <1, 1 >> >(dev_tree, level_nodes, level + 1, level);
+			GpuAssert(cudaFree(d_RealValues), "Cannot free d_RealValues");
 	}
 
-	free(sorted_subnets_bits);
+	free(sortedSubnetsBits);
 	free(matchedIndexes);
-	free(minus_one);
-	free(prefixes_start);
-	free(prefixes_end);
+	delete [] minus_one;
+	delete [] prefixesStart;
+	delete [] prefixesEnd;
 
-	cudaFree(dev_level_nodes);
-	cudaFree(dev_prefixes_end);
-	cudaFree(dev_prefixes_start);
-	cudaFree(dev_subnets_indx);
-	cudaFree(dev_tree);
-	cudaFree(dev_sorted_subnets_bits);
-	cudaFree(dev_subnets_indx);
-	cudaFree(dev_full_level);
-	cudaFree(dev_full_level_0);
-	cudaFree(dev_full_level_1);
-	cudaFree(dev_full_level_2);
-	cudaFree(dev_level16);
-	cudaFree(dev_level24);
-	cudaFree(dev_level8);
-	cudaFree(dev_node_prefix);
-	cudaFree(dev_real_values);
-	cudaFree(dev_temp_flag);
-	cudaFree(dev_temp_Indx);
-
+	ModelBuildTime = timer.Stop();
 	GpuAssert(cudaSetDevice(0), "Cannot reset device.");
 }
 
-void TreeMatcher::Match(IPSet set)
+__global__ void PrepareIPList(unsigned char * ipData, unsigned int * ipList, int size)
 {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned char b1, b2, b3, b4;
+
+	while(i < size)
+	{
+		b1 = ipData[i * 5];
+		b2 = ipData[i * 5 + 1];
+		b3 = ipData[i * 5 + 2];
+		b4 = ipData[i * 5 + 3];
+		ipList[i] = (b1 << 24) + (b2 << 16) + (b3 << 8) + b4;
+
+		i += blockDim.x * gridDim.x;
+	}
+}
+
+TreeResult TreeMatcher::Match(IPSet set)
+{
+	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
+	Timer timer;
+
+	TreeResult result;
+
+	int threads = Setup.Threads;
+	int blocks = 1;
+	if (set.Size > Setup.Threads)
+	{
+		threads = Setup.Threads;
+		blocks = set.Size / Setup.Threads;
+		if (set.Size % Setup.Threads)
+			blocks++;
+	}
+
+	unsigned int * d_IPList;
+	GpuAssert(cudaMalloc((void**)&d_IPList, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_IPList");
+
+	PrepareIPList << <Setup.Blocks, Setup.Threads >> > (set.d_IPData, d_IPList, set.Size);
+	GpuAssert(cudaGetLastError(), "Error while launching PrepareIPList");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareIPList");
+
+	int * d_MatchedIndexes;
+	GpuAssert(cudaMalloc((void**)&d_MatchedIndexes, set.Size * sizeof(int)), "Cannot allocate memory for d_MatchedIndexes");
+
+	unsigned int * d_ThreadTimeStart;
+	GpuAssert(cudaMalloc((void**)&d_ThreadTimeStart, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_ThreadTimeStart");
+
+	unsigned int * d_ThreadTimeEnd;
+	GpuAssert(cudaMalloc((void**)&d_ThreadTimeEnd, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_ThreadTimeEnd");
+
+	unsigned int * d_ThreadTime;
+	GpuAssert(cudaMalloc((void**)&d_ThreadTime, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_ThreadTime");
+
+	timer.Start();
+
+	if(UsePresorting)
+		thrust::sort(thrust::device, d_IPList, d_IPList + set.Size);
+
+	if (!UseMidLevels)
+	{
+		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd, d_ThreadTime);
+		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnet kernel");
+		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnet kernel");
+	}
+	else
+	{
+		AssignIPSubnetWithMidLevels << < blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level16, Tree.d_Level24, Tree.d_Level8, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd, d_ThreadTime);
+		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnetWithMidLevels kernel");
+		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnetWithMidLevels kernel");
+	}
+
+	result.MatchedIndexes = new int[set.Size];
+	result.SortedSubnetsBits = new char[33 * Tree.Size];
+	result.IPsList = new unsigned int[set.Size];
+	result.IPsListSize = set.Size;
+
+	result.ThreadTimeRecorded = true;
+	result.ThreadTimeStart = new unsigned int[set.Size];
+	result.ThreadTimeEnd = new unsigned int[set.Size];
+	result.ThreadTime = new unsigned int[set.Size];
+
+	GpuAssert(cudaMemcpy(result.MatchedIndexes, d_MatchedIndexes, set.Size * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy memory to MatchedIndexes");
+	GpuAssert(cudaMemcpy(result.SortedSubnetsBits, Tree.d_SortedSubnetBits, 33 * Tree.Size * sizeof(char), cudaMemcpyDeviceToHost), "Cannot copy memory to SortedSubnetsBits");
+	GpuAssert(cudaMemcpy(result.IPsList, d_IPList, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to IPsList");
+
+	GpuAssert(cudaMemcpy(result.ThreadTimeStart, d_ThreadTimeStart, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTimeStart");
+	GpuAssert(cudaMemcpy(result.ThreadTimeEnd, d_ThreadTimeEnd, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTimeEnd");
+	GpuAssert(cudaMemcpy(result.ThreadTime, d_ThreadTime, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTime");
+
+	GpuAssert(cudaFree(d_MatchedIndexes), "Cannot free d_MatchedIndexes");
+	GpuAssert(cudaFree(d_ThreadTime), "Cannot free dev_thread_time");
+	GpuAssert(cudaFree(d_ThreadTimeStart), "Cannot free dev_thread_time_start");
+	GpuAssert(cudaFree(d_ThreadTimeEnd), "Cannot free dev_thread_time_end");
+	GpuAssert(cudaFree(d_IPList), "Cannot free d_IPList");
+
+	result.MatchingTime = timer.Stop();
+	GpuAssert(cudaSetDevice(0), "Cannot reset device.");
+
+	return result;
+}
+
+void TreeModel::Dispose()
+{
+	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
+	GpuAssert(cudaFree(d_LevelNodes), "Cannot free d_LevelNodes");
+	GpuAssert(cudaFree(d_PrefixesEnd), "Cannot free d_PrefixesEnd");
+	GpuAssert(cudaFree(d_PrefixesStart), "CAnnot free d_PrefixesStart");
+	GpuAssert(cudaFree(d_SubnetsIndx), "Cannot free d_SubnetsIndx");
+	GpuAssert(cudaFree(d_Tree), "Cannot free d_Tree");
+	GpuAssert(cudaFree(d_SortedSubnetBits), "Cannot free d_SortedSubnetBits");
+	GpuAssert(cudaFree(d_Level16), "Cannot free d_Level16");
+	GpuAssert(cudaFree(d_Level24), "Cannot free d_Level24");
+	GpuAssert(cudaFree(d_Level8), "Cannot free d_Level8");
+	GpuAssert(cudaSetDevice(0), "Cannot reset device.");
+	disposed = true;
 }

@@ -38,6 +38,15 @@ IPSet::IPSet(const IPSet& other)
 	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet = operator.");
 }
 
+void IPSet::Dispose()
+{
+	if (d_IPData != NULL)
+	{
+		GpuAssert(cudaFree(d_IPData), "Cannot free device memory in IPSet destructor.");
+		d_IPData = NULL;
+	}
+}
+
 void IPSet::Load(GpuSetup &setup, string &path, int count)
 {
 	//TODO: This may be faster, but less clean

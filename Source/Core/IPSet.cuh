@@ -17,18 +17,14 @@ public:
 
 	~IPSet()
 	{
-		if (d_IPData != NULL)
-		{
-			GpuAssert(cudaFree(d_IPData), "Cannot free device memory in IPSet destructor.");
-			d_IPData = NULL;
-		}
+		Dispose();
 	}
 
 	IPSet& operator=(const IPSet& other);
 
 	IPSet(const IPSet& other);
-	
 
+	void Dispose();
 	void Load(GpuSetup &setup, string &path, int count);
 	IPSet RandomSubset(int subsetSize);
 	friend std::ostream& operator<<(std::ostream& os, const IPSet& obj);
