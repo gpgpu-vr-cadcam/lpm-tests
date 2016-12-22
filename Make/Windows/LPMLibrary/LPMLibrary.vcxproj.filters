@@ -27,7 +27,7 @@
     <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh">
       <Filter>Matchers</Filter>
     </ClInclude>
-    <ClInclude Include="BaseResult.h">
+    <ClInclude Include="..\..\..\Source\Core\BaseResult.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

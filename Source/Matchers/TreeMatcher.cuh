@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../Make/Windows/LPMLibrary/BaseResult.h"
 #include "../Utils/Utils.h"
 #include "../Core/IPSet.cuh"
+#include "../Core/BaseResult.h"
 
 class TreeModel
 {

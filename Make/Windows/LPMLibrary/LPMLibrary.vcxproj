@@ -19,11 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Source\Core\BaseResult.h" />
     <ClInclude Include="..\..\..\Source\Core\IPSet.cuh" />
     <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh" />
     <ClInclude Include="..\..\..\Source\Tests\Tests.h" />
     <ClInclude Include="..\..\..\Source\Utils\Utils.h" />
-    <ClInclude Include="BaseResult.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\Utils\Utils.cpp" />
