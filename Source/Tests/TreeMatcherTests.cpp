@@ -11,7 +11,7 @@ TEST_P(TreeMatcherBuildModelTest, For)
 	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
 
 	//when
-	TreeMatcher matcher;
+	TreeMatcher matcher(set.Size);
 	matcher.BuildModel(set);
 
 	//then
@@ -27,6 +27,8 @@ TEST_P(TreeMatcherBuildModelTest, For)
 	matcher.Tree.Dispose();
 	set.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+
+	cout << "Model build time:" << matcher.ModelBuildTime << endl;
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperIPSet_When_BuildModelCalled_Then_ModelCreated, TreeMatcherBuildModelTest, testing::ValuesIn(ENV.SubsetTests));
 
@@ -38,7 +40,7 @@ TEST_P(TreeMatcherBasicMatchTest, For)
 	IPSet set;
 	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
 
-	TreeMatcher matcher;
+	TreeMatcher matcher(set.Size);
 	matcher.BuildModel(set);
 
 	//when
@@ -61,6 +63,8 @@ TEST_P(TreeMatcherBasicMatchTest, For)
 	matcher.Tree.Dispose();
 	set.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+
+	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcher_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTest, testing::ValuesIn(ENV.SubsetTests));
 
@@ -72,7 +76,7 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevels, For)
 	IPSet set;
 	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
 
-	TreeMatcher matcher;
+	TreeMatcher matcher(set.Size);
 	matcher.UseMidLevels = true;
 	matcher.BuildModel(set);
 
@@ -96,6 +100,8 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevels, For)
 	matcher.Tree.Dispose();
 	set.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+
+	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithMidLevels, testing::ValuesIn(ENV.SubsetTests));
 
@@ -107,7 +113,7 @@ TEST_P(TreeMatcherBasicMatchTestWithPresorting, For)
 	IPSet set;
 	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
 
-	TreeMatcher matcher;
+	TreeMatcher matcher(set.Size);
 	matcher.UsePresorting = true;
 	matcher.BuildModel(set);
 
@@ -131,6 +137,8 @@ TEST_P(TreeMatcherBasicMatchTestWithPresorting, For)
 	matcher.Tree.Dispose();
 	set.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+
+	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithPresorting, testing::ValuesIn(ENV.SubsetTests));
 
@@ -142,7 +150,7 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, For)
 	IPSet set;
 	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
 
-	TreeMatcher matcher;
+	TreeMatcher matcher(set.Size);
 	matcher.UseMidLevels = true;
 	matcher.UsePresorting = true;
 	matcher.BuildModel(set);
@@ -167,5 +175,7 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, For)
 	matcher.Tree.Dispose();
 	set.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+
+	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, testing::ValuesIn(ENV.SubsetTests));

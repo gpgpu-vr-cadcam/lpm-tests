@@ -63,6 +63,11 @@ public:
 	bool UsePresorting = false;
 
 	float ModelBuildTime;
+	const int MaxSetSize;
+
+	TreeMatcher(int maxSetSize)
+		: ModelBuildTime(0),
+	      MaxSetSize(maxSetSize) {}
 
 	TreeModel Tree;
 	void BuildModel(IPSet set);

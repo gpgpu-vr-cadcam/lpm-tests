@@ -749,6 +749,9 @@ void TreeResult::PrintResult()
 
 void TreeMatcher::BuildModel(IPSet set)
 {
+	if (set.Size > MaxSetSize)
+		throw runtime_error("Cannot build model for set bigger then MaxSetSize");
+
 	Setup = set.Setup;
 	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
 	Timer timer;
@@ -756,7 +759,7 @@ void TreeMatcher::BuildModel(IPSet set)
 
 	Tree.Setup = Setup;
 	Tree.Size = set.Size;
-	int chunks = set.Size / 50000 + 1;
+	int chunks = MaxSetSize / 50000 + 1;
 
 	// Host Variables:
 	char * sortedSubnetsBits = nullptr;
@@ -951,6 +954,9 @@ __global__ void PrepareIPList(unsigned char * ipData, unsigned int * ipList, int
 
 TreeResult TreeMatcher::Match(IPSet set)
 {
+	if (set.Size > MaxSetSize)
+		throw runtime_error("Cannot match ip's for set bigger then MaxSetSize");
+
 	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
 	Timer timer;
 
