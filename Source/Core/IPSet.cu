@@ -78,7 +78,45 @@ void IPSet::Load(GpuSetup &setup, string &path, int count)
 	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet Load.");
 	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
 	GpuAssert(cudaMemcpy(d_IPData, IPData, 5 * Size * sizeof(unsigned char), cudaMemcpyHostToDevice), "Cannot copy ip masks to device memory.");
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet Load.");
+	GpuAssert(cudaSetDevice(0), "Cannot reset cuda device in IPSet Load.");
+
+	delete[] IPData;
+}
+
+void IPSet::Generate(GpuSetup& setup, int count)
+{
+	Setup = setup;
+	Size = count;
+
+	unsigned char *IPData = new unsigned char[Size * 5];
+
+	int maskLenght;
+	int mask;
+
+	for (int i = 0; i < Size; ++i)
+	{
+		if ((rand() % 100) <= 60)
+			maskLenght = 24;
+		else if ((rand() % 100) <= 25)
+			maskLenght = 16;
+		else if ((rand() % 100) <= 33)
+			maskLenght = 8;
+		else
+			maskLenght = rand() % 32;
+
+		mask = (rand() | (rand() << 16)) << (32 - maskLenght);
+
+		IPData[i * 5] = (mask >> 24) & 0xFF;
+		IPData[i * 5 + 1] = (mask >> 16) & 0xFF;
+		IPData[i * 5 + 2] = (mask >> 8) & 0xFF;
+		IPData[i * 5 + 3] = mask & 0xFF;
+		IPData[i * 5 + 4] = maskLenght;
+	}
+
+	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet Generate.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
+	GpuAssert(cudaMemcpy(d_IPData, IPData, 5 * Size * sizeof(unsigned char), cudaMemcpyHostToDevice), "Cannot copy ip masks to device memory.");
+	GpuAssert(cudaSetDevice(0), "Cannot reset cuda device in IPSet Generate.");
 
 	delete[] IPData;
 }
@@ -103,6 +141,9 @@ __global__ void CopyIPsToSubset(unsigned char *dstIPs, unsigned char *srcIPs, in
 
 IPSet IPSet::RandomSubset(int subsetSize)
 {
+	if (subsetSize >= Size)
+		throw runtime_error("Only exact subsets allowed");
+
 	IPSet subset;
 	subset.Setup = Setup;
 	subset.Size = subsetSize;
@@ -146,4 +187,23 @@ std::ostream& operator<<(std::ostream& os, const IPSet& obj)
 
 	delete[] ips;
 	return os;
+}
+
+IPSet operator+(IPSet& l, IPSet& r)
+{
+	IPSet set;
+
+	if (l.Setup.DeviceID != r.Setup.DeviceID)
+		throw runtime_error("Cannot add set from different devices");
+
+	set.Size = l.Size + r.Size;
+	set.Setup = l.Setup;
+
+	GpuAssert(cudaSetDevice(set.Setup.DeviceID), "Cannot set cuda device in IPSet add.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&set.d_IPData), 5 * set.Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
+	GpuAssert(cudaMemcpy(set.d_IPData, l.d_IPData, 5 * l.Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy ip masks to device memory.");
+	GpuAssert(cudaMemcpy(set.d_IPData + 5 * l.Size * sizeof(unsigned char), r.d_IPData, 5 * r.Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy ip masks to device memory.");
+	GpuAssert(cudaSetDevice(0), "Cannot reset cuda device in IPSet Generate.");
+
+	return set;
 }

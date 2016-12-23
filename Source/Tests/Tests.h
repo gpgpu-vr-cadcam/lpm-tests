@@ -27,18 +27,33 @@ public:
 class IPSetTest
 {
 public:
-	TestFile File;
 	GpuSetup Setup;
 	int MasksToLoad;
 
 
-	IPSetTest(const TestFile& file, const GpuSetup& setup, int masksToLoad)
-		: File(file),
-		  Setup(setup),
+	IPSetTest(const GpuSetup& setup, int masksToLoad)
+		: Setup(setup),
 		  MasksToLoad(masksToLoad) {}
 
 
 	friend std::ostream& operator<<(std::ostream& os, const IPSetTest& obj)
+	{
+		return os
+			<< "Setup: " << obj.Setup
+			<< " MasksToLoad: " << obj.MasksToLoad;
+	}
+};
+
+class IPSetLoadTest : public IPSetTest
+{
+public:
+	TestFile File;
+
+	IPSetLoadTest(const TestFile& file, const GpuSetup& setup, int masksToLoad)
+		: IPSetTest(setup, masksToLoad),
+		  File(file) {}
+
+	friend std::ostream& operator<<(std::ostream& os, const IPSetLoadTest& obj)
 	{
 		return os
 			<< "File: " << obj.File
@@ -47,20 +62,20 @@ public:
 	}
 };
 
-class IPSubsetTest : public IPSetTest
+class IPSubsetTest : public IPSetLoadTest
 {
 public:
 	int SubsetSize;
 
 
 	IPSubsetTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size)
-		: IPSetTest(file, setup, masksToLoad),
+		: IPSetLoadTest(file, setup, masksToLoad),
 		  SubsetSize(subset_size) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const IPSubsetTest& obj)
 	{
 		return os
-			<< static_cast<const IPSetTest&>(obj)
+			<< static_cast<const IPSetLoadTest&>(obj)
 			<< " SubsetSize: " << obj.SubsetSize;
 	}
 };
@@ -72,6 +87,7 @@ public:
 	vector<TestFile> Files;
 	vector<GpuSetup> Setups;
 	vector<IPSetTest> IPSetTests;
+	vector<IPSetLoadTest> IPSetLoadTests;
 	vector<IPSubsetTest> SubsetTests;
 
 	void InitFiles()
@@ -88,6 +104,16 @@ public:
 		Files.push_back(TestFile("../../../TestData/data-raw-table_usa_092016.txt", 598473));
 	}
 
+	void InitGenerateSetups()
+	{
+		vector<int> masksToLoad = { 10000, 20000 };
+
+		for (auto s : Setups)
+			for (auto m : masksToLoad)
+				IPSetTests.push_back(IPSetTest(s, m));
+
+	}
+
 	void InitSetups()
 	{
 		vector<int> devices = { 0 };
@@ -102,19 +128,16 @@ public:
 
 	void InitIPSetTests()
 	{
-		vector<int> masksToLoad = { 100000, 200000 };
-
 		for (auto f : Files)
-			for (auto s : Setups)
-				for(auto m : masksToLoad)
-					IPSetTests.push_back(IPSetTest(f, s, m));
+			for(auto t : IPSetTests)
+				IPSetLoadTests.push_back(IPSetLoadTest(f, t.Setup, t.MasksToLoad));
 	}
 
 	void InitSubsetTests()
 	{
-		vector<int> subsetSizes = { 50000, 75000 };
+		vector<int> subsetSizes = { 5000, 7500 };
 
-		for (auto t : IPSetTests)
+		for (auto t : IPSetLoadTests)
 			for (auto s : subsetSizes)
 				SubsetTests.push_back(IPSubsetTest(t.File, t.Setup, t.MasksToLoad, s));
 	}
@@ -123,6 +146,7 @@ public:
 	{
 		InitFiles();
 		InitSetups();
+		InitGenerateSetups();
 		InitIPSetTests();
 		InitSubsetTests();
 	}

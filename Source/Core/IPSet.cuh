@@ -26,7 +26,9 @@ public:
 
 	void Dispose();
 	void Load(GpuSetup &setup, string &path, int count);
+	void Generate(GpuSetup &setup, int count);
 	IPSet RandomSubset(int subsetSize);
 	friend std::ostream& operator<<(std::ostream& os, const IPSet& obj);
+	friend IPSet operator+(IPSet &l, IPSet &r);
 	
 };
