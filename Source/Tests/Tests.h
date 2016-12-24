@@ -175,7 +175,7 @@ public:
 
 	void InitSubsetTests()
 	{
-		vector<int> subsetSizes = { 5000, 7500 };
+		vector<int> subsetSizes = { 5000, 12500 };
 
 		for (auto t : IPSetLoadTests)
 			for (auto s : subsetSizes)

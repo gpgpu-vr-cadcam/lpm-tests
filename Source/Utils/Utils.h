@@ -89,11 +89,10 @@ struct Rnd
 
 	__host__ __device__ Rnd(int min = 0, int max = 10000) : Min(min), Max(max) {};
 
-	__host__ __device__ int operator()(const unsigned int n) const
+	__host__ __device__ int operator()() const
 	{
 		thrust::default_random_engine rng;
 		thrust::uniform_int_distribution<int> dist(Min, Max);
-		rng.discard(n);
 
 		return dist(rng);
 	}

@@ -158,9 +158,6 @@ IPSet IPSet::RandomSubset(int subsetSize, GpuSetup &setup)
 
 IPSet IPSet::RandomSubset(int subsetSize)
 {
-	if (subsetSize >= Size)
-		throw runtime_error("Only exact subsets allowed");
-
 	IPSet subset;
 	subset.Setup = Setup;
 	subset.Size = subsetSize;
@@ -168,14 +165,16 @@ IPSet IPSet::RandomSubset(int subsetSize)
 	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
 
 	int *d_Indexes;
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Indexes), Size * sizeof(int)), "Cannot init indexes device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Indexes), subset.Size * sizeof(int)), "Cannot init indexes device memory.");
 	int *d_RandomValues;
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_RandomValues), Size * sizeof(int)), "Cannot init random values device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_RandomValues), subset.Size * sizeof(int)), "Cannot init random values device memory.");
 	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&subset.d_IPData), 5 * subset.Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
 
 	thrust::sequence(thrust::device, d_Indexes, d_Indexes + Size, 0);
-	thrust::transform(thrust::device, d_Indexes, d_Indexes + Size, d_RandomValues, Rnd(0, Size));
-	thrust::stable_sort_by_key(thrust::device, d_RandomValues, d_RandomValues + Size, d_Indexes);
+	if(subset.Size > Size)
+		thrust::generate_n(thrust::device, d_Indexes + Size, subsetSize - Size, Rnd(0, Size));
+	thrust::generate_n(thrust::device, d_RandomValues, subset.Size, Rnd(0, subset.Size));
+	thrust::stable_sort_by_key(thrust::device, d_RandomValues, d_RandomValues + subset.Size, d_Indexes);
 	thrust::sort(thrust::device, d_Indexes, d_Indexes + subset.Size);
 
 	CopyIPsToSubset << < Setup.Blocks, Setup.Threads >> > (subset.d_IPData, d_IPData, d_Indexes, subset.Size);
