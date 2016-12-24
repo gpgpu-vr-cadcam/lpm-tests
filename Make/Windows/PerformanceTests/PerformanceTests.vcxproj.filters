@@ -6,4 +6,7 @@
   <ItemGroup>
     <CudaCompile Include="..\..\..\Source\Tests\PerformanceTestsMain.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\Tests\PerformanceTests.cpp" />
+  </ItemGroup>
 </Project>

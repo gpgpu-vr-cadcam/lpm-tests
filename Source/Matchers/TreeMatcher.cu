@@ -759,7 +759,6 @@ void TreeMatcher::BuildModel(IPSet set)
 
 	Tree.Setup = Setup;
 	Tree.Size = set.Size;
-	int chunks = MaxSetSize / 50000 + 1;
 
 	// Host Variables:
 	char * sortedSubnetsBits = nullptr;
@@ -782,6 +781,7 @@ void TreeMatcher::BuildModel(IPSet set)
 	int threads;
 	int blocks;
 
+	int chunks = MaxSetSize / 50000 + 1;
 	GpuAssert(cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8000000 * chunks), "Cannot set cuda limit malloc heap size.");
 
 	// Allocate GPU buffers for subnetmasks vector.

@@ -80,6 +80,44 @@ public:
 	}
 };
 
+class PerformanceTest
+{
+public:
+	int Seed;
+	TestFile SourceSet;
+	int ModelSubsetSize;
+	int MatchSubsetSize;
+	int RandomMasksSetSize;
+	int Blocks;
+	int Threads;
+	int DeviceID;
+
+
+	PerformanceTest(int seed, TestFile source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id)
+		: Seed(seed),
+		  SourceSet(source_set),
+		  ModelSubsetSize(model_subset_size),
+		  MatchSubsetSize(match_subset_size),
+		  RandomMasksSetSize(random_masks_set_size),
+		  Blocks(blocks),
+		  Threads(threads),
+		  DeviceID(device_id) {}
+
+
+	friend std::ostream& operator<<(std::ostream& os, const PerformanceTest& obj)
+	{
+		return os
+			<< "Seed: " << obj.Seed
+			<< " SourceSet: " << obj.SourceSet
+			<< " ModelSubsetSize: " << obj.ModelSubsetSize
+			<< " MatchSubsetSize: " << obj.MatchSubsetSize
+			<< " RandomMasksSetSize: " << obj.RandomMasksSetSize
+			<< " Blocks: " << obj.Blocks
+			<< " Threads: " << obj.Threads
+			<< " DeviceID: " << obj.DeviceID;
+	}
+};
+
 class Environment
 {
 public:
@@ -89,6 +127,8 @@ public:
 	vector<IPSetTest> IPSetTests;
 	vector<IPSetLoadTest> IPSetLoadTests;
 	vector<IPSubsetTest> SubsetTests;
+
+	vector<PerformanceTest> PerformanceTests;
 
 	void InitFiles()
 	{
@@ -142,6 +182,27 @@ public:
 				SubsetTests.push_back(IPSubsetTest(t.File, t.Setup, t.MasksToLoad, s));
 	}
 
+	void InitPerformanceTests()
+	{
+		vector<int> Seeds = { 2341};
+		vector<int> ModelsSubsetSizes = { 400000 };
+		vector<int> MatchSubsetSizes = { 150000 };
+		vector<int> RandomMasksSetSizes = { 150000 };
+		vector<int> Blocks = { 500 };
+		vector<int> Threads = { 500 };
+		vector<int> Devices = { 0 };
+
+		for (auto s : Seeds)
+			for (auto b : Blocks)
+				for (auto t : Threads)
+					for (auto d : Devices)
+						for (auto modelSS : ModelsSubsetSizes)
+							for (auto matchSS : MatchSubsetSizes)
+								for (auto rndSS : RandomMasksSetSizes)
+									for (auto f : Files)
+										PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d));
+	}
+
 	Environment()
 	{
 		InitFiles();
@@ -149,6 +210,10 @@ public:
 		InitGenerateSetups();
 		InitIPSetTests();
 		InitSubsetTests();
+
+		#ifdef PERF_TEST
+			InitPerformanceTests();
+		#endif
 	}
 };
 

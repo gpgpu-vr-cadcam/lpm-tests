@@ -49,8 +49,6 @@ void IPSet::Dispose()
 
 void IPSet::Load(GpuSetup &setup, string &path, int count)
 {
-	//TODO: This may be faster, but less clean
-
 	Setup = setup;
 	ifstream file(path);
 	string line;
@@ -74,6 +72,7 @@ void IPSet::Load(GpuSetup &setup, string &path, int count)
 
 	for(int i = 0; i < Size * 5; ++i)
 		IPData[i] = static_cast<unsigned char>(stoi(parts[i]));
+
 
 	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet Load.");
 	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
@@ -137,6 +136,24 @@ __global__ void CopyIPsToSubset(unsigned char *dstIPs, unsigned char *srcIPs, in
 
 		iteration += blockDim.x * gridDim.x;
 	}
+}
+
+IPSet IPSet::RandomSubset(int subsetSize, GpuSetup &setup)
+{
+	IPSet subset = RandomSubset(subsetSize);
+	subset.Setup = setup;
+
+	if (subset.Setup.DeviceID == Setup.DeviceID)
+		return subset;
+
+	unsigned char *d_OldData = subset.d_IPData;
+	GpuAssert(cudaSetDevice(subset.Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&subset.d_IPData), 5 * subset.Size * sizeof(unsigned char)), "Cannot malloc memory on other device for subset.");
+	GpuAssert(cudaMemcpy(subset.d_IPData, d_OldData, 5 * subset.Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy data to other device.");
+	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
+	GpuAssert(cudaFree(d_OldData), "Cannot free old data of random subset.");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
+	return subset;
 }
 
 IPSet IPSet::RandomSubset(int subsetSize)
