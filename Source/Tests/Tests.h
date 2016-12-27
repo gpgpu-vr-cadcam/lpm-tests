@@ -137,16 +137,16 @@ public:
 
 	void InitFiles()
 	{
-		Files.push_back(TestFile("../../../TestData/data-raw-table_australia_012016.txt", 565949));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_australia_092016.txt", 420206));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_honkkong_012016.txt", 565907));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_honkkong_092016.txt", 602812));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_london_012016.txt", 564426));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_london_092016.txt", 601489));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_tokyo_012016.txt", 576846));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_tokyo_092016.txt", 611460));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_usa_012016.txt", 561755));
-		Files.push_back(TestFile("../../../TestData/data-raw-table_usa_092016.txt", 598473));
+		Files.push_back(TestFile("../TestData/data-raw-table_australia_012016.txt", 565949));
+		Files.push_back(TestFile("../TestData/data-raw-table_australia_092016.txt", 420206));
+		Files.push_back(TestFile("../TestData/data-raw-table_honkkong_012016.txt", 565907));
+		Files.push_back(TestFile("../TestData/data-raw-table_honkkong_092016.txt", 602812));
+		Files.push_back(TestFile("../TestData/data-raw-table_london_012016.txt", 564426));
+		Files.push_back(TestFile("../TestData/data-raw-table_london_092016.txt", 601489));
+		Files.push_back(TestFile("../TestData/data-raw-table_tokyo_012016.txt", 576846));
+		Files.push_back(TestFile("../TestData/data-raw-table_tokyo_092016.txt", 611460));
+		Files.push_back(TestFile("../TestData/data-raw-table_usa_012016.txt", 561755));
+		Files.push_back(TestFile("../TestData/data-raw-table_usa_092016.txt", 598473));
 	}
 
 	void InitGenerateSetups()
@@ -162,8 +162,8 @@ public:
 	void InitSetups()
 	{
 		vector<int> devices = { 0 };
-		vector<int> blocks = { 100, 200 };
-		vector<int> threads = { 100, 200 };
+		vector<int> blocks = { 400, 500 };
+		vector<int> threads = { 400, 500 };
 
 		for (auto d : devices)
 			for (auto b : blocks)
@@ -190,9 +190,9 @@ public:
 	void InitPerformanceTests()
 	{
 		vector<int> Seeds = { 2341};
-		vector<int> ModelsSubsetSizes = { 400000 };
-		vector<int> MatchSubsetSizes = { 150000 };
-		vector<int> RandomMasksSetSizes = { 150000 };
+		vector<int> ModelSetSize = { 400000 };
+		vector<int> MatchSet1Size = { 150000 };
+		vector<int> MatchSet2Size = { 150000 };
 		vector<int> Blocks = { 500 };
 		vector<int> Threads = { 500 };
 		vector<int> Devices = { 0 };
@@ -202,9 +202,9 @@ public:
 			for (auto b : Blocks)
 				for (auto t : Threads)
 					for (auto d : Devices)
-						for (auto modelSS : ModelsSubsetSizes)
-							for (auto matchSS : MatchSubsetSizes)
-								for (auto rndSS : RandomMasksSetSizes)
+						for (auto modelSS : ModelSetSize)
+							for (auto matchSS : MatchSet1Size)
+								for (auto rndSS : MatchSet2Size)
 									for(auto ps : UsePresorting)
 										for (auto f : Files)
 											PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps));

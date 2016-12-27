@@ -101,7 +101,7 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevels, For)
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithMidLevels, testing::ValuesIn(ENV.SubsetTests));
+//INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithMidLevels, testing::ValuesIn(ENV.SubsetTests));
 
 struct TreeMatcherBasicMatchTestWithPresorting : testing::Test, testing::WithParamInterface<IPSubsetTest> {};
 TEST_P(TreeMatcherBasicMatchTestWithPresorting, For)
@@ -174,4 +174,4 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, For)
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, testing::ValuesIn(ENV.SubsetTests));
+//INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcherWithMidLevels_When_MatchCalled_Then_IPsMatched, TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, testing::ValuesIn(ENV.SubsetTests));

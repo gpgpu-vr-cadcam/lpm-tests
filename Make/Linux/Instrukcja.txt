@@ -1,0 +1,27 @@
+W 4 linii Makefile'a zdefiniowana zmienna NVCC_FLAGS to parametry kompilatora, które idą do każdego jego wywołania.
+
+Po zbudowaniu w głównym katalogu (lpm) utworzy się folder Bin. W nim 2 pliki wykonywalne: BasicTests i PerformanceTests. Oba należy uruchamiać z katalogu Bin (bo ścieżki do plików testowych są wbite na sztywno - to będzie poprawione).
+
+BasicTests uruchamia ogólne testy, żeby sprawdzić czy wszystko jest ok.
+
+PerformanceTests wykonuje testy wydajnościowe i tworzy plik z pomiarami czasu i parametrami.
+Test wydajnościowy:
+	-dla jednego z plików testowych (tych od Ziada) tworzony jest jego losowy podzbiór o zadanej wielkości. To jest ModelSet, czyli zbiór masek, z których zbudujemy drzewo
+	-tworzony jest losowy podzbiór ModelSetu o zadanej wielkości, MatchSet1
+	-tworzony jest zbiór losowych IP o zadanej wielkości, MatchSet2
+	-MatchSet = MatchSet1 + MatchSet2. MatchSet to zbiór ip, które będziemy wyszukiwać w drzewie
+	-budujemy drzewo na podstawie ModelSetu
+	-wyszukujemy w nim IP z MatchSetu
+
+To jest scenariusz jedego testu. Po  jego wykonaniu, do pliku z wynikami (TestResults.txt w folderze Bin) jest dopisywany wynik w formacie:
+
+deviceID;bloki;wątki;rozmiar_ModelSet;rozmiar_MatchSet1;rozmiar_MatchSet2;ścieżka_pliku_źródłowego;czy_posortowano;czas_budowy_drzewa;czas_sortowania;czas_wyszukiwania;
+Dla każdego z wyszukiwanych IP jest linia:
+id;czast_start;czas_end;
+Pusta linia.
+
+Każdy taki test jest wykonywany dla wszystkich plików testowych (10 sztuk) dla wszystkich kombinacji parametrów, zdefiniowanych w pliku Source/Tests/Tests.h w funkcji InitPerformanceTests. Parametr Seed to źródło dla srand, więc podanie np. 5 różnych liczb spowoduje wykonanie tego testu 5 razy na tym samym pliku losując różne podzbiory itd. Każde wykonanie zapisze osobne wyniki do pliku jak wyżej.
+
+Uwagi:
+	-z nieznanych przyczyn kod nie działa dla małcyh wartości bloków i wątków. W pewnym miejscu Ziad coś tam przelicza i czasem mu wychodzi za dużo, żeby karta mogła to udźwignąć
+	-na razie nie do końca działa parametr deviceID, więc niech zostanie zawsze 0. I tak gpunode'y mają wszystkie karty takie same. Będę nad tym pracował.

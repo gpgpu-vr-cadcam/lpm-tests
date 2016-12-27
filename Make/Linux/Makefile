@@ -1,7 +1,7 @@
 NVCC=nvcc
 SOURCE=../../Source
 BIN=../../Bin
-NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_52,code=sm_52
+NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11
 
 GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
 
@@ -10,16 +10,37 @@ CORE=$(BIN)/Tmp/IPSet.o
 MATCHERS=$(BIN)/Tmp/TreeMatcher.o
 LIB=$(CORE) $(UTILS) $(MATCHERS)
 
+GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
+PERF_TEST=$(BIN)/Tmp/PerformanceTests.o $(BIN)/Tmp/PerformanceTestsMain.o
+BASIC_TEST=$(BIN)/Tmp/IPSetTests.o $(BIN)/Tmp/TreeMatcherTests.o $(BIN)/Tmp/TestsMain.o
+TEST_RUNNERS=$(BIN)/PerformanceTests $(BIN)/BasicTests
 
-runner: lib $(BIN)/Runner
+all: lib test
 
-$(BIN)/Runner: $(LIB) $(BIN)/Tmp/Runner.o
-	$(NVCC) $(NVCC_FLAGS) -lpthread -o $(BIN)/Runner $(LIB) $(BIN)/Tmp/Runner.o
-
-$(BIN)/Tmp/Runner.o: $(SOURCE)/Runners/Runner.cpp
-	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Runners/Runner.cpp -o $(BIN)/Tmp/Runner.o
+test: bin $(LIB) $(PERF_TEST) $(BASIC_TEST) $(TEST_RUNNERS)
 
 lib: bin $(LIB)
+
+$(BIN)/BasicTests: $(LIB) $(BASIC_TEST)
+	$(NVCC) $(NVCC_FLAGS) -lpthread -o $(BIN)/BasicTests $(LIB) $(BASIC_TEST) $(GTEST)
+
+$(BIN)/Tmp/TestsMain.o: $(SOURCE)/Tests/TestsMain.cu $(SOURCE)/Tests/Tests.h
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Tests/TestsMain.cu -o $(BIN)/Tmp/TestsMain.o
+
+$(BIN)/Tmp/TreeMatcherTests.o: $(SOURCE)/Tests/TreeMatcherTests.cpp $(SOURCE)/Tests/Tests.h
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Tests/TreeMatcherTests.cpp -o $(BIN)/Tmp/TreeMatcherTests.o
+
+$(BIN)/Tmp/IPSetTests.o: $(SOURCE)/Tests/IPSetTests.cpp $(SOURCE)/Tests/Tests.h
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Tests/IPSetTests.cpp -o $(BIN)/Tmp/IPSetTests.o
+
+$(BIN)/PerformanceTests: $(LIB) $(PERF_TEST)
+	$(NVCC) $(NVCC_FLAGS) -lpthread -D PERF_TEST -o $(BIN)/PerformanceTests $(LIB) $(PERF_TEST) $(GTEST)
+
+$(BIN)/Tmp/PerformanceTestsMain.o: $(SOURCE)/Tests/PerformanceTestsMain.cu $(SOURCE)/Tests/Tests.h
+	$(NVCC) $(NVCC_FLAGS) -D PERF_TEST -c $(SOURCE)/Tests/PerformanceTestsMain.cu -o $(BIN)/Tmp/PerformanceTestsMain.o
+
+$(BIN)/Tmp/PerformanceTests.o: $(SOURCE)/Tests/PerformanceTests.cpp $(SOURCE)/Tests/Tests.h
+	$(NVCC) $(NVCC_FLAGS) -D PERF_TEST -c $(SOURCE)/Tests/PerformanceTests.cpp -o $(BIN)/Tmp/PerformanceTests.o
 
 $(BIN)/Tmp/TreeMatcher.o: $(SOURCE)/Matchers/TreeMatcher.cu $(SOURCE)/Matchers/TreeMatcher.cuh $(SOURCE)/Core/BaseResult.h
 	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Matchers/TreeMatcher.cu -o $(BIN)/Tmp/TreeMatcher.o
