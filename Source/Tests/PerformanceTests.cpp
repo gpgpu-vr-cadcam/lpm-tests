@@ -20,7 +20,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	IPSet matchSet = matchSet1 + matchSet2;
 
 	TreeMatcher matcher(max(modelSet.Size, matchSet.Size));
-	matcher.UsePresorting = false;
+	matcher.UsePresorting = testCase.UsePresorting;
 	matcher.UseMidLevels = false;
 
 	//when
@@ -28,8 +28,15 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	TreeResult result = matcher.Match(matchSet);
 
 	//then
-	//TODO: Zapis wyników do plików
+	ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
+		<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
+		<< testCase.SourceSet.Path << ";" << testCase.UsePresorting << ";";
+	ENV.ResultsFile << matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << ";" << endl;
 	
+	for (int i = 0; i < matchSet.Size; ++i)
+		ENV.ResultsFile << i << ";" << result.ThreadTimeStart[i] << ";" << result.ThreadTimeEnd[i] << ";" << endl;
+
+	ENV.ResultsFile << endl;
 
 	//cleanup
 	modelSet.Dispose();

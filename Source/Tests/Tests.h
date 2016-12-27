@@ -3,7 +3,8 @@
 #include <vector>
 #include <string>
 #include <ostream>
-
+#include <iostream>
+#include <fstream>
 using namespace std;
 
 class TestFile
@@ -91,9 +92,10 @@ public:
 	int Blocks;
 	int Threads;
 	int DeviceID;
+	bool UsePresorting;
 
 
-	PerformanceTest(int seed, TestFile source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id)
+	PerformanceTest(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, bool use_presorting)
 		: Seed(seed),
 		  SourceSet(source_set),
 		  ModelSubsetSize(model_subset_size),
@@ -101,7 +103,8 @@ public:
 		  RandomMasksSetSize(random_masks_set_size),
 		  Blocks(blocks),
 		  Threads(threads),
-		  DeviceID(device_id) {}
+		  DeviceID(device_id),
+		  UsePresorting(use_presorting) {}
 
 
 	friend std::ostream& operator<<(std::ostream& os, const PerformanceTest& obj)
@@ -114,7 +117,8 @@ public:
 			<< " RandomMasksSetSize: " << obj.RandomMasksSetSize
 			<< " Blocks: " << obj.Blocks
 			<< " Threads: " << obj.Threads
-			<< " DeviceID: " << obj.DeviceID;
+			<< " DeviceID: " << obj.DeviceID
+			<< " UsePresorting: " << obj.UsePresorting;
 	}
 };
 
@@ -129,6 +133,7 @@ public:
 	vector<IPSubsetTest> SubsetTests;
 
 	vector<PerformanceTest> PerformanceTests;
+	ofstream ResultsFile;
 
 	void InitFiles()
 	{
@@ -191,6 +196,7 @@ public:
 		vector<int> Blocks = { 500 };
 		vector<int> Threads = { 500 };
 		vector<int> Devices = { 0 };
+		vector<bool> UsePresorting = { false, true };
 
 		for (auto s : Seeds)
 			for (auto b : Blocks)
@@ -199,8 +205,11 @@ public:
 						for (auto modelSS : ModelsSubsetSizes)
 							for (auto matchSS : MatchSubsetSizes)
 								for (auto rndSS : RandomMasksSetSizes)
-									for (auto f : Files)
-										PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d));
+									for(auto ps : UsePresorting)
+										for (auto f : Files)
+											PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps));
+
+		ResultsFile.open("TestResults.txt");
 	}
 
 	Environment()
