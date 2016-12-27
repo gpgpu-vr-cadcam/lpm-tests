@@ -29,6 +29,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 
 	//then
 	//TODO: Zapis wyników do plików
+	
 
 	//cleanup
 	modelSet.Dispose();

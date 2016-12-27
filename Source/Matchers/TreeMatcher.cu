@@ -479,7 +479,7 @@ __device__ int search_between_two_levels(int low_level, int top_level, unsigned 
 
 }
 __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int * dev_level8, int * dev_level16,
-	int * dev_level24, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end, unsigned int  * time_thread)
+	int * dev_level24, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end)
 {
 	__shared__ int * shared_dev_tree[33];
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
@@ -524,7 +524,6 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 					dev_matched_ip_subnet[thread] = max;
 
 					clock_t stop = clock();
-					time_thread[thread] = (unsigned int)(stop - start);
 					time_thread_end[thread] = (unsigned int)stop;
 					time_thread_start[thread] = (unsigned int)start;
 					//printf("IPS Assigning time: %f ms\n", a_elapsed);
@@ -558,7 +557,6 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 				{
 					dev_matched_ip_subnet[thread] = max;
 					clock_t stop = clock();
-					time_thread[thread] = (unsigned int)(stop - start);
 					time_thread_end[thread] = (unsigned int)stop;
 					time_thread_start[thread] = (unsigned int)start;
 
@@ -590,7 +588,6 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 				{
 					dev_matched_ip_subnet[thread] = max;
 					clock_t stop = clock();
-					time_thread[thread] = (unsigned int)(stop - start);
 					time_thread_end[thread] = (unsigned int)stop;
 					time_thread_start[thread] = (unsigned int)start;
 
@@ -618,14 +615,12 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 			}
 			dev_matched_ip_subnet[thread] = max;
 			clock_t stop = clock();
-			time_thread[thread] = (unsigned int)(stop - start);
 			time_thread_end[thread] = (unsigned int)stop;
 			time_thread_start[thread] = (unsigned int)start;
 
 			return;
 		}
 		clock_t stop = clock();
-		time_thread[thread] = (unsigned int)(stop - start);
 		time_thread_end[thread] = (unsigned int)stop;
 		time_thread_start[thread] = (unsigned int)start;
 
@@ -633,7 +628,7 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 
 }
 
-__global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end, unsigned int  * time_thread)
+__global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end)
 {
 	__shared__ int * shared_dev_tree[33];
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
@@ -669,7 +664,6 @@ __global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int
 
 		dev_matched_ip_subnet[thread] = max;
 		clock_t stop = clock();
-		time_thread[thread] = (unsigned int)(stop - start);
 		time_thread_end[thread] = (unsigned int)stop;
 		time_thread_start[thread] = (unsigned int)start;
 	}
@@ -998,13 +992,13 @@ TreeResult TreeMatcher::Match(IPSet set)
 
 	if (!UseMidLevels)
 	{
-		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd, d_ThreadTime);
+		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd);
 		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnet kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnet kernel");
 	}
 	else
 	{
-		AssignIPSubnetWithMidLevels << < blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level16, Tree.d_Level24, Tree.d_Level8, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd, d_ThreadTime);
+		AssignIPSubnetWithMidLevels << < blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level16, Tree.d_Level24, Tree.d_Level8, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd);
 		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnetWithMidLevels kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnetWithMidLevels kernel");
 	}
@@ -1017,7 +1011,6 @@ TreeResult TreeMatcher::Match(IPSet set)
 	result.ThreadTimeRecorded = true;
 	result.ThreadTimeStart = new unsigned int[set.Size];
 	result.ThreadTimeEnd = new unsigned int[set.Size];
-	result.ThreadTime = new unsigned int[set.Size];
 
 	GpuAssert(cudaMemcpy(result.MatchedIndexes, d_MatchedIndexes, set.Size * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy memory to MatchedIndexes");
 	GpuAssert(cudaMemcpy(result.SortedSubnetsBits, Tree.d_SortedSubnetBits, 33 * Tree.Size * sizeof(char), cudaMemcpyDeviceToHost), "Cannot copy memory to SortedSubnetsBits");
@@ -1025,7 +1018,6 @@ TreeResult TreeMatcher::Match(IPSet set)
 
 	GpuAssert(cudaMemcpy(result.ThreadTimeStart, d_ThreadTimeStart, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTimeStart");
 	GpuAssert(cudaMemcpy(result.ThreadTimeEnd, d_ThreadTimeEnd, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTimeEnd");
-	GpuAssert(cudaMemcpy(result.ThreadTime, d_ThreadTime, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTime");
 
 	GpuAssert(cudaFree(d_MatchedIndexes), "Cannot free d_MatchedIndexes");
 	GpuAssert(cudaFree(d_ThreadTime), "Cannot free dev_thread_time");

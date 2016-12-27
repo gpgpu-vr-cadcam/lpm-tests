@@ -51,7 +51,6 @@ TEST_P(TreeMatcherBasicMatchTest, For)
 	EXPECT_TRUE(result.IPsList != NULL);
 	EXPECT_TRUE(result.SortedSubnetsBits != NULL);
 	EXPECT_EQ(result.IPsListSize, set.Size);
-	EXPECT_TRUE(result.ThreadTime != NULL);
 	EXPECT_TRUE(result.ThreadTimeEnd != NULL);
 	EXPECT_TRUE(result.ThreadTimeStart != NULL);
 	EXPECT_TRUE(result.ThreadTimeRecorded);
@@ -88,7 +87,6 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevels, For)
 	EXPECT_TRUE(result.IPsList != NULL);
 	EXPECT_TRUE(result.SortedSubnetsBits != NULL);
 	EXPECT_EQ(result.IPsListSize, set.Size);
-	EXPECT_TRUE(result.ThreadTime != NULL);
 	EXPECT_TRUE(result.ThreadTimeEnd != NULL);
 	EXPECT_TRUE(result.ThreadTimeStart != NULL);
 	EXPECT_TRUE(result.ThreadTimeRecorded);
@@ -125,7 +123,6 @@ TEST_P(TreeMatcherBasicMatchTestWithPresorting, For)
 	EXPECT_TRUE(result.IPsList != NULL);
 	EXPECT_TRUE(result.SortedSubnetsBits != NULL);
 	EXPECT_EQ(result.IPsListSize, set.Size);
-	EXPECT_TRUE(result.ThreadTime != NULL);
 	EXPECT_TRUE(result.ThreadTimeEnd != NULL);
 	EXPECT_TRUE(result.ThreadTimeStart != NULL);
 	EXPECT_TRUE(result.ThreadTimeRecorded);
@@ -163,7 +160,6 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, For)
 	EXPECT_TRUE(result.IPsList != NULL);
 	EXPECT_TRUE(result.SortedSubnetsBits != NULL);
 	EXPECT_EQ(result.IPsListSize, set.Size);
-	EXPECT_TRUE(result.ThreadTime != NULL);
 	EXPECT_TRUE(result.ThreadTimeEnd != NULL);
 	EXPECT_TRUE(result.ThreadTimeStart != NULL);
 	EXPECT_TRUE(result.ThreadTimeRecorded);
