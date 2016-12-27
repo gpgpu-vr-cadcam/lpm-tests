@@ -39,6 +39,7 @@ public:
 	unsigned int * IPsList = NULL;
 	int IPsListSize = 0;
 	const int PrintJump = 100;
+	float PresortingTime = 0;
 
 	virtual ~TreeResult()
 	{

@@ -987,8 +987,12 @@ TreeResult TreeMatcher::Match(IPSet set)
 
 	timer.Start();
 
-	if(UsePresorting)
+	if (UsePresorting)
+	{
 		thrust::sort(thrust::device, d_IPList, d_IPList + set.Size);
+		result.PresortingTime = timer.Stop();
+		timer.Start();
+	}
 
 	if (!UseMidLevels)
 	{
