@@ -54,13 +54,31 @@ void IPSet::Load(GpuSetup &setup, string path, int count)
 	string line;
 	string delims = ";.";
 	vector<string> parts;
+	int pos;
 
 	int iteration = 0;
 	while (!file.eof() && iteration < count)
 	{
 		file >> line;
 		line = line.substr(4, line.size());
-		SplitLine(line, delims, parts);
+
+		pos = line.find(".");
+		parts.push_back(line.substr(0, pos));
+		line = line.substr(pos+1, line.size());
+
+		pos = line.find(".");
+		parts.push_back(line.substr(0, pos));
+		line = line.substr(pos+1, line.size());
+
+		pos = line.find(".");
+		parts.push_back(line.substr(0, pos));
+		line = line.substr(pos+1, line.size());
+
+		pos = line.find(";");
+		parts.push_back(line.substr(0, pos));
+		line = line.substr(pos+1, line.size());
+
+		parts.push_back(line);
 
 		++iteration;
 	}

@@ -92,9 +92,10 @@ public:
 	int Threads;
 	int DeviceID;
 	bool UsePresorting;
+	bool UseMidLevels;
 
 
-	PerformanceTest(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, bool use_presorting)
+	PerformanceTest(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, bool use_presorting, bool use_mid_levels)
 		: Seed(seed),
 		  SourceSet(source_set),
 		  ModelSubsetSize(model_subset_size),
@@ -103,7 +104,8 @@ public:
 		  Blocks(blocks),
 		  Threads(threads),
 		  DeviceID(device_id),
-		  UsePresorting(use_presorting) {}
+		  UsePresorting(use_presorting),
+		  UseMidLevels(use_mid_levels) {}
 
 
 	friend std::ostream& operator<<(std::ostream& os, const PerformanceTest& obj)
@@ -117,7 +119,8 @@ public:
 			<< " Blocks: " << obj.Blocks
 			<< " Threads: " << obj.Threads
 			<< " DeviceID: " << obj.DeviceID
-			<< " UsePresorting: " << obj.UsePresorting;
+			<< " UsePresorting: " << obj.UsePresorting
+			<< " UseMidLevels: " << obj.UseMidLevels;
 	}
 };
 
@@ -193,10 +196,11 @@ public:
 		vector<int> ModelSetSize = { 400000 };
 		vector<int> MatchSet1Size = { 150000 };
 		vector<int> MatchSet2Size = { 150000 };
-		vector<int> Blocks = { 1000 };
-		vector<int> Threads = { 1000 };
+		vector<int> Blocks = { 1024 };
+		vector<int> Threads = { 1024 };
 		vector<int> Devices = { 0 };
 		vector<bool> UsePresorting = { false, true };
+		vector<bool> UseMidLevels = { false, true };
 
 		for (auto s : Seeds)
 			for (auto b : Blocks)
@@ -206,8 +210,9 @@ public:
 							for (auto matchSS : MatchSet1Size)
 								for (auto rndSS : MatchSet2Size)
 									for(auto ps : UsePresorting)
-										for (auto f : Files)
-											PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps));
+										for(auto ml : UseMidLevels)
+											for (auto f : Files)
+												PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps, ml));
 
 		ResultsFile.open("TestResults.txt");
 	}

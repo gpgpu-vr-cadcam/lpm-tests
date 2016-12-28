@@ -21,7 +21,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 
 	TreeMatcher matcher(max(modelSet.Size, matchSet.Size));
 	matcher.UsePresorting = testCase.UsePresorting;
-	matcher.UseMidLevels = false;
+	matcher.UseMidLevels = testCase.UseMidLevels;
 
 	//when
 	matcher.BuildModel(modelSet);
@@ -30,7 +30,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	//then
 	ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
 		<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
-		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";";
+		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";" << testCase.UseMidLevels << ";";
 	ENV.ResultsFile << matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << ";" << endl;
 	
 	for (int i = 0; i < matchSet.Size; ++i)
