@@ -481,17 +481,10 @@ __device__ int search_between_two_levels(int low_level, int top_level, unsigned 
 __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int * dev_level8, int * dev_level16,
 	int * dev_level24, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end)
 {
-	__shared__ int * shared_dev_tree[33];
+	//TODO: Shared memory for dev_tree
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < searchedIpsSize)
 	{
-		if (threadIdx.x < 33)
-		{
-			shared_dev_tree[threadIdx.x] = dev_tree[threadIdx.x];
-			//printf("thread: %d  -> clock: %f \n", thread, CLOCKS_PER_SECOND);
-		}
-		__syncthreads();
-
 		clock_t start = clock();
 
 		unsigned int ip = dev_ips_list[thread];
@@ -505,18 +498,18 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 			if (trav != -1)
 			{
 				level = 24;
-				cur = shared_dev_tree[level][trav * 5 + 4];
+				cur = dev_tree[level][trav * 5 + 4];
 				if (cur > -1)
 					max = cur;
-				trav = shared_dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
+				trav = dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
 				level++;
 				while (trav > -1)
 				{
-					cur = shared_dev_tree[level][trav * 5 + 4];
+					cur = dev_tree[level][trav * 5 + 4];
 					if (cur > -1)
 						max = cur;
 
-					trav = shared_dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
+					trav = dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
 					level++;
 				}
 				if (cur != -1)
@@ -537,20 +530,20 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 			if (trav != -1)
 			{
 				level = 16;
-				cur = shared_dev_tree[level][trav * 5 + 4];
+				cur = dev_tree[level][trav * 5 + 4];
 				if (cur > -1)
 					max = cur;
 
-				trav = shared_dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
+				trav = dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
 
 				level++;
 				while (trav > -1 && level < 24)
 				{
-					cur = shared_dev_tree[level][trav * 5 + 4];
+					cur = dev_tree[level][trav * 5 + 4];
 					if (cur > -1)
 						max = cur;
 
-					trav = shared_dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
+					trav = dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
 					level++;
 				}
 				if (cur != -1)
@@ -570,18 +563,18 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 			if (trav != -1)
 			{
 				level = 8;
-				cur = shared_dev_tree[level][trav * 5 + 4];
+				cur = dev_tree[level][trav * 5 + 4];
 				if (cur > -1)
 					max = cur;
-				trav = shared_dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
+				trav = dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
 				level++;
 				while (trav > -1 && level < 16)
 				{
-					cur = shared_dev_tree[level][trav * 5 + 4];
+					cur = dev_tree[level][trav * 5 + 4];
 					if (cur > -1)
 						max = cur;
 
-					trav = shared_dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
+					trav = dev_tree[level][trav * 5 + 2 + ((ip & (1 << (31 - level))) >> (31 - level))];
 					level++;
 				}
 				if (cur != -1)
@@ -630,17 +623,9 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 
 __global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end)
 {
-	__shared__ int * shared_dev_tree[33];
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < searchedIpsSize)
 	{
-		if (threadIdx.x < 33)
-		{
-			shared_dev_tree[threadIdx.x] = dev_tree[threadIdx.x];
-			//printf("thread: %d  -> clock: %f \n", thread, CLOCKS_PER_SECOND);
-		}
-		__syncthreads();
-
 		clock_t start = clock();
 
 		unsigned int ip = dev_ips_list[thread];
@@ -969,7 +954,7 @@ TreeResult TreeMatcher::Match(IPSet set)
 	unsigned int * d_IPList;
 	GpuAssert(cudaMalloc((void**)&d_IPList, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_IPList");
 
-	PrepareIPList << <Setup.Blocks, Setup.Threads >> > (set.d_IPData, d_IPList, set.Size);
+	PrepareIPList << <blocks, threads >> > (set.d_IPData, d_IPList, set.Size);
 	GpuAssert(cudaGetLastError(), "Error while launching PrepareIPList");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareIPList");
 
@@ -1002,7 +987,7 @@ TreeResult TreeMatcher::Match(IPSet set)
 	}
 	else
 	{
-		AssignIPSubnetWithMidLevels << < blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level16, Tree.d_Level24, Tree.d_Level8, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd);
+		AssignIPSubnetWithMidLevels << < blocks, threads>> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level8, Tree.d_Level16, Tree.d_Level24, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd);
 		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnetWithMidLevels kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnetWithMidLevels kernel");
 	}

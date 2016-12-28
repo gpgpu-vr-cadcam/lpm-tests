@@ -151,7 +151,7 @@ public:
 
 	void InitGenerateSetups()
 	{
-		vector<int> masksToLoad = { 10000, 20000 };
+		vector<int> masksToLoad = { 100000, 200000 };
 
 		for (auto s : Setups)
 			for (auto m : masksToLoad)
@@ -162,8 +162,8 @@ public:
 	void InitSetups()
 	{
 		vector<int> devices = { 0 };
-		vector<int> blocks = { 400, 500 };
-		vector<int> threads = { 400, 500 };
+		vector<int> blocks = { 1000 };
+		vector<int> threads = { 512, 1024 };
 
 		for (auto d : devices)
 			for (auto b : blocks)
@@ -180,7 +180,7 @@ public:
 
 	void InitSubsetTests()
 	{
-		vector<int> subsetSizes = { 5000, 12500 };
+		vector<int> subsetSizes = { 50000, 125000 };
 
 		for (auto t : IPSetLoadTests)
 			for (auto s : subsetSizes)
@@ -193,8 +193,8 @@ public:
 		vector<int> ModelSetSize = { 400000 };
 		vector<int> MatchSet1Size = { 150000 };
 		vector<int> MatchSet2Size = { 150000 };
-		vector<int> Blocks = { 500 };
-		vector<int> Threads = { 500 };
+		vector<int> Blocks = { 1000 };
+		vector<int> Threads = { 1000 };
 		vector<int> Devices = { 0 };
 		vector<bool> UsePresorting = { false, true };
 
