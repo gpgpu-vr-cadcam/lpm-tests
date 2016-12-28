@@ -26,7 +26,9 @@ TEST_P(TreeMatcherBuildModelTest, For)
 	//cleanup due to setting cudaLimitMallocHeapSize in this matcher
 	matcher.Tree.Dispose();
 	set.Dispose();
+	GpuAssert(cudaSetDevice(testCase.Setup.DeviceID), "Cannot set cuda device.");
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl;
 }
@@ -61,7 +63,9 @@ TEST_P(TreeMatcherBasicMatchTest, For)
 	//cleanup due to setting cudaLimitMallocHeapSize in this matcher
 	matcher.Tree.Dispose();
 	set.Dispose();
+	GpuAssert(cudaSetDevice(testCase.Setup.DeviceID), "Cannot set cuda device.");
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
@@ -97,7 +101,9 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevels, For)
 	//cleanup due to setting cudaLimitMallocHeapSize in this matcher
 	matcher.Tree.Dispose();
 	set.Dispose();
+	GpuAssert(cudaSetDevice(testCase.Setup.DeviceID), "Cannot set cuda device.");
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
@@ -133,7 +139,9 @@ TEST_P(TreeMatcherBasicMatchTestWithPresorting, For)
 	//cleanup due to setting cudaLimitMallocHeapSize in this matcher
 	matcher.Tree.Dispose();
 	set.Dispose();
+	GpuAssert(cudaSetDevice(testCase.Setup.DeviceID), "Cannot set cuda device.");
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
@@ -170,7 +178,9 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, For)
 	//cleanup due to setting cudaLimitMallocHeapSize in this matcher
 	matcher.Tree.Dispose();
 	set.Dispose();
+	GpuAssert(cudaSetDevice(testCase.Setup.DeviceID), "Cannot set cuda device.");
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }

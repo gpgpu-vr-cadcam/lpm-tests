@@ -1,8 +1,9 @@
 W 4 linii Makefile'a zdefiniowana zmienna NVCC_FLAGS to parametry kompilatora, które idą do każdego jego wywołania.
 
-Po zbudowaniu w głównym katalogu (lpm) utworzy się folder Bin. W nim 2 pliki wykonywalne: BasicTests i PerformanceTests. Oba należy uruchamiać z katalogu Bin (bo ścieżki do plików testowych są wbite na sztywno - to będzie poprawione).
+Po zbudowaniu w głównym katalogu (lpm) utworzy się folder Bin. W nim 2 pliki wykonywalne: BasicTests i PerformanceTests. Oba mają jeden parametr uruchomieniowy - ściężkę do katalogu z plikami testowymi. Przykładowe uruchomienie z katalogu Bin:
+./PerformanceTests ../TestData/
 
-BasicTests uruchamia ogólne testy, żeby sprawdzić czy wszystko jest ok.
+BasicTests uruchamia ogólne testy, żeby sprawdzić czy wszystko jest ok. Dość długo to trwa, więc puściłem już na gpunode1 i wyszstko jest w porządku.
 
 PerformanceTests wykonuje testy wydajnościowe i tworzy plik z pomiarami czasu i parametrami.
 Test wydajnościowy:
@@ -15,7 +16,7 @@ Test wydajnościowy:
 
 To jest scenariusz jedego testu. Po  jego wykonaniu, do pliku z wynikami (TestResults.txt w folderze Bin) jest dopisywany wynik w formacie:
 
-deviceID;bloki;wątki;rozmiar_ModelSet;rozmiar_MatchSet1;rozmiar_MatchSet2;ścieżka_pliku_źródłowego;czy_posortowano;czas_budowy_drzewa;czas_sortowania;czas_wyszukiwania;
+deviceID;bloki;wątki;rozmiar_ModelSet;rozmiar_MatchSet1;rozmiar_MatchSet2;ścieżka_pliku_źródłowego;czy_posortowano;czy_użyto_leveli_pośrednich;czas_budowy_drzewa;czas_sortowania;czas_wyszukiwania;
 Dla każdego z wyszukiwanych IP jest linia:
 id;czast_start;czas_end;
 Pusta linia.
@@ -23,5 +24,4 @@ Pusta linia.
 Każdy taki test jest wykonywany dla wszystkich plików testowych (10 sztuk) dla wszystkich kombinacji parametrów, zdefiniowanych w pliku Source/Tests/Tests.h w funkcji InitPerformanceTests. Parametr Seed to źródło dla srand, więc podanie np. 5 różnych liczb spowoduje wykonanie tego testu 5 razy na tym samym pliku losując różne podzbiory itd. Każde wykonanie zapisze osobne wyniki do pliku jak wyżej.
 
 Uwagi:
-	-z nieznanych przyczyn kod nie działa dla małcyh wartości bloków i wątków. W pewnym miejscu Ziad coś tam przelicza i czasem mu wychodzi za dużo, żeby karta mogła to udźwignąć
-	-na razie nie do końca działa parametr deviceID, więc niech zostanie zawsze 0. I tak gpunode'y mają wszystkie karty takie same. Będę nad tym pracował.
+	-w plikach z danymi jest od 400k do 600k masek, dlatego maksymalny rozmiar ModelSetu do 400k (przy większym może się wywalić)

@@ -154,7 +154,7 @@ public:
 
 	void InitGenerateSetups()
 	{
-		vector<int> masksToLoad = { 100000, 200000 };
+		vector<int> masksToLoad = { 10000, 20000 };
 
 		for (auto s : Setups)
 			for (auto m : masksToLoad)
@@ -183,7 +183,7 @@ public:
 
 	void InitSubsetTests()
 	{
-		vector<int> subsetSizes = { 50000, 125000 };
+		vector<int> subsetSizes = { 5000, 12500 };
 
 		for (auto t : IPSetLoadTests)
 			for (auto s : subsetSizes)

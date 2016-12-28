@@ -39,11 +39,13 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	ENV.ResultsFile << endl;
 
 	//cleanup
+	GpuAssert(cudaSetDevice(setup.DeviceID), "Cannot set cuda device.");
 	modelSet.Dispose();
 	matchSet1.Dispose();
 	matchSet2.Dispose();
 	matchSet.Dispose();
 	matcher.Tree.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
