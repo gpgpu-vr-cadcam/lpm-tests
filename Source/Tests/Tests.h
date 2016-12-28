@@ -3,25 +3,24 @@
 #include <vector>
 #include <string>
 #include <ostream>
-#include <iostream>
 #include <fstream>
 using namespace std;
 
 class TestFile
 {
 public:
-	string Path;
 	int Size;
+	string FileName;
 
-	TestFile(const string& path, int size)
-		: Path(path),
-		  Size(size) {}
+	TestFile(const string& file_name, int size)
+		: Size(size),
+		FileName(file_name) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const TestFile& obj)
 	{
 		return os
-			<< "Path: " << obj.Path
-			<< " Size: " << obj.Size;
+			<< "Size: " << obj.Size
+			<< " FileName: " << obj.FileName;
 	}
 };
 
@@ -126,6 +125,7 @@ class Environment
 {
 public:
 
+	string TestDataPath = "../../../TestData/";
 	vector<TestFile> Files;
 	vector<GpuSetup> Setups;
 	vector<IPSetTest> IPSetTests;
@@ -137,16 +137,16 @@ public:
 
 	void InitFiles()
 	{
-		Files.push_back(TestFile("../TestData/data-raw-table_australia_012016.txt", 565949));
-		Files.push_back(TestFile("../TestData/data-raw-table_australia_092016.txt", 420206));
-		Files.push_back(TestFile("../TestData/data-raw-table_honkkong_012016.txt", 565907));
-		Files.push_back(TestFile("../TestData/data-raw-table_honkkong_092016.txt", 602812));
-		Files.push_back(TestFile("../TestData/data-raw-table_london_012016.txt", 564426));
-		Files.push_back(TestFile("../TestData/data-raw-table_london_092016.txt", 601489));
-		Files.push_back(TestFile("../TestData/data-raw-table_tokyo_012016.txt", 576846));
-		Files.push_back(TestFile("../TestData/data-raw-table_tokyo_092016.txt", 611460));
-		Files.push_back(TestFile("../TestData/data-raw-table_usa_012016.txt", 561755));
-		Files.push_back(TestFile("../TestData/data-raw-table_usa_092016.txt", 598473));
+		Files.push_back(TestFile("data-raw-table_australia_012016.txt", 565949));
+		Files.push_back(TestFile("data-raw-table_australia_092016.txt", 420206));
+		Files.push_back(TestFile("data-raw-table_honkkong_012016.txt", 565907));
+		Files.push_back(TestFile("data-raw-table_honkkong_092016.txt", 602812));
+		Files.push_back(TestFile("data-raw-table_london_012016.txt", 564426));
+		Files.push_back(TestFile("data-raw-table_london_092016.txt", 601489));
+		Files.push_back(TestFile("data-raw-table_tokyo_012016.txt", 576846));
+		Files.push_back(TestFile("data-raw-table_tokyo_092016.txt", 611460));
+		Files.push_back(TestFile("data-raw-table_usa_012016.txt", 561755));
+		Files.push_back(TestFile("data-raw-table_usa_092016.txt", 598473));
 	}
 
 	void InitGenerateSetups()
@@ -226,4 +226,4 @@ public:
 	}
 };
 
-static Environment ENV;
+extern Environment ENV;

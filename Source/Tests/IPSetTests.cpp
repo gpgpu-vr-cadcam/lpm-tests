@@ -29,7 +29,7 @@ TEST_P(LoadTest, For)
 
 	//when
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	//then
 	EXPECT_EQ(set.Size, testCase.MasksToLoad);
@@ -47,7 +47,7 @@ TEST_P(AddTest, For)
 	IPSetLoadTest testCase = GetParam();
 
 	IPSet set1;
-	set1.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set1.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	IPSet set2;
 	set2.Generate(testCase.Setup, testCase.MasksToLoad);
@@ -71,7 +71,7 @@ TEST_P(SubsetTest, For)
 	//given
 	IPSubsetTest testCase = GetParam();
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	//when
 	IPSet subset = set.RandomSubset(testCase.SubsetSize);

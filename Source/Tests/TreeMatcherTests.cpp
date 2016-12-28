@@ -8,7 +8,7 @@ TEST_P(TreeMatcherBuildModelTest, For)
 	//given
 	IPSubsetTest testCase = GetParam();
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	//when
 	TreeMatcher matcher(set.Size);
@@ -38,7 +38,7 @@ TEST_P(TreeMatcherBasicMatchTest, For)
 	//given
 	IPSubsetTest testCase = GetParam();
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	TreeMatcher matcher(set.Size);
 	matcher.BuildModel(set);
@@ -73,7 +73,7 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevels, For)
 	//given
 	IPSubsetTest testCase = GetParam();
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	TreeMatcher matcher(set.Size);
 	matcher.UseMidLevels = true;
@@ -109,7 +109,7 @@ TEST_P(TreeMatcherBasicMatchTestWithPresorting, For)
 	//given
 	IPSubsetTest testCase = GetParam();
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	TreeMatcher matcher(set.Size);
 	matcher.UsePresorting = true;
@@ -145,7 +145,7 @@ TEST_P(TreeMatcherBasicMatchTestWithMidLevelsAndPresorting, For)
 	//given
 	IPSubsetTest testCase = GetParam();
 	IPSet set;
-	set.Load(testCase.Setup, testCase.File.Path, testCase.MasksToLoad);
+	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	TreeMatcher matcher(set.Size);
 	matcher.UseMidLevels = true;

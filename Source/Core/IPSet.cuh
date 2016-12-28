@@ -25,7 +25,7 @@ public:
 	IPSet(const IPSet& other);
 
 	void Dispose();
-	void Load(GpuSetup &setup, string &path, int count);
+	void Load(GpuSetup &setup, string path, int count);
 	void Generate(GpuSetup &setup, int count);
 	IPSet RandomSubset(int subsetSize);
 	IPSet RandomSubset(int subsetSize, GpuSetup &setup);

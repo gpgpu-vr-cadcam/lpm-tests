@@ -12,7 +12,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	GpuSetup setup(testCase.Blocks, testCase.Threads, testCase.DeviceID);
 
 	IPSet modelSet;
-	modelSet.Load(setup, testCase.SourceSet.Path, testCase.ModelSubsetSize);
+	modelSet.Load(setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.ModelSubsetSize);
 
 	IPSet matchSet1 = modelSet.RandomSubset(testCase.MatchSubsetSize);
 	IPSet matchSet2;
@@ -30,7 +30,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	//then
 	ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
 		<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
-		<< testCase.SourceSet.Path << ";" << testCase.UsePresorting << ";";
+		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";";
 	ENV.ResultsFile << matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << ";" << endl;
 	
 	for (int i = 0; i < matchSet.Size; ++i)

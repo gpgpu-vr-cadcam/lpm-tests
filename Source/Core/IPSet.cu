@@ -47,7 +47,7 @@ void IPSet::Dispose()
 	}
 }
 
-void IPSet::Load(GpuSetup &setup, string &path, int count)
+void IPSet::Load(GpuSetup &setup, string path, int count)
 {
 	Setup = setup;
 	ifstream file(path);
