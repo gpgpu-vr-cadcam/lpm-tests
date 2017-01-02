@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LPMLibraryTests", "LPMLibra
 		{E0152BAE-AB6D-478B-85DD-C17CC1E2941E} = {E0152BAE-AB6D-478B-85DD-C17CC1E2941E}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runner", "Runner\Runner.vcxproj", "{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E0152BAE-AB6D-478B-85DD-C17CC1E2941E} = {E0152BAE-AB6D-478B-85DD-C17CC1E2941E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -47,6 +52,14 @@ Global
 		{C095188B-104D-459C-AE9F-9EDB49636C1D}.Release|x64.Build.0 = Release|x64
 		{C095188B-104D-459C-AE9F-9EDB49636C1D}.Release|x86.ActiveCfg = Release|Win32
 		{C095188B-104D-459C-AE9F-9EDB49636C1D}.Release|x86.Build.0 = Release|Win32
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Debug|x64.ActiveCfg = Debug|x64
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Debug|x64.Build.0 = Debug|x64
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Debug|x86.ActiveCfg = Debug|Win32
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Debug|x86.Build.0 = Debug|Win32
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Release|x64.ActiveCfg = Release|x64
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Release|x64.Build.0 = Release|x64
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Release|x86.ActiveCfg = Release|Win32
+		{AA6538CC-B2B9-4146-A98C-F27F3540FB2C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

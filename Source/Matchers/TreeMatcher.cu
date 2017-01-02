@@ -479,13 +479,19 @@ __device__ int search_between_two_levels(int low_level, int top_level, unsigned 
 
 }
 __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int * dev_level8, int * dev_level16,
-	int * dev_level24, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end)
+	int * dev_level24, int searchedIpsSize, char min_prefx
+#ifndef NO_THREADS_TRACE 
+		, unsigned int  * time_thread_start, unsigned int  * time_thread_end 
+#endif
+			)
 {
 	//TODO: Shared memory for dev_tree
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < searchedIpsSize)
 	{
+#ifndef NO_THREADS_TRACE
 		clock_t start = clock();
+#endif
 
 		unsigned int ip = dev_ips_list[thread];
 		int max = -1;
@@ -516,10 +522,11 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 				{
 					dev_matched_ip_subnet[thread] = max;
 
+#ifndef NO_THREADS_TRACE
 					clock_t stop = clock();
 					time_thread_end[thread] = (unsigned int)stop;
 					time_thread_start[thread] = (unsigned int)start;
-					//printf("IPS Assigning time: %f ms\n", a_elapsed);
+#endif
 					return;
 				}
 			}
@@ -549,9 +556,12 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 				if (cur != -1)
 				{
 					dev_matched_ip_subnet[thread] = max;
+
+#ifndef NO_THREADS_TRACE
 					clock_t stop = clock();
 					time_thread_end[thread] = (unsigned int)stop;
 					time_thread_start[thread] = (unsigned int)start;
+#endif
 
 					return;
 				}
@@ -580,9 +590,12 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 				if (cur != -1)
 				{
 					dev_matched_ip_subnet[thread] = max;
+
+#ifndef NO_THREADS_TRACE
 					clock_t stop = clock();
 					time_thread_end[thread] = (unsigned int)stop;
 					time_thread_start[thread] = (unsigned int)start;
+#endif
 
 					return;
 				}
@@ -607,27 +620,37 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 				}
 			}
 			dev_matched_ip_subnet[thread] = max;
+
+#ifndef NO_THREADS_TRACE
 			clock_t stop = clock();
 			time_thread_end[thread] = (unsigned int)stop;
 			time_thread_start[thread] = (unsigned int)start;
+#endif
 
 			return;
 		}
+
+#ifndef NO_THREADS_TRACE
 		clock_t stop = clock();
 		time_thread_end[thread] = (unsigned int)stop;
 		time_thread_start[thread] = (unsigned int)start;
-
+#endif
 	}
 
 }
 
-__global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx, unsigned int  * time_thread_start, unsigned int  * time_thread_end)
+__global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int * dev_matched_ip_subnet, int searchedIpsSize, char min_prefx
+#ifndef NO_THREADS_TRACE
+	, unsigned int  * time_thread_start, unsigned int  * time_thread_end
+#endif 
+)
 {
 	unsigned int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < searchedIpsSize)
 	{
+#ifndef NO_THREADS_TRACE
 		clock_t start = clock();
-
+#endif
 		unsigned int ip = dev_ips_list[thread];
 		int max = -1;
 		int cur;
@@ -648,9 +671,12 @@ __global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int
 		}
 
 		dev_matched_ip_subnet[thread] = max;
+
+#ifndef NO_THREADS_TRACE
 		clock_t stop = clock();
 		time_thread_end[thread] = (unsigned int)stop;
 		time_thread_start[thread] = (unsigned int)start;
+#endif
 	}
 }
 
@@ -961,14 +987,15 @@ TreeResult TreeMatcher::Match(IPSet set)
 	int * d_MatchedIndexes;
 	GpuAssert(cudaMalloc((void**)&d_MatchedIndexes, set.Size * sizeof(int)), "Cannot allocate memory for d_MatchedIndexes");
 
+#ifndef NO_THREADS_TRACE
+
 	unsigned int * d_ThreadTimeStart;
 	GpuAssert(cudaMalloc((void**)&d_ThreadTimeStart, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_ThreadTimeStart");
 
 	unsigned int * d_ThreadTimeEnd;
 	GpuAssert(cudaMalloc((void**)&d_ThreadTimeEnd, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_ThreadTimeEnd");
 
-	unsigned int * d_ThreadTime;
-	GpuAssert(cudaMalloc((void**)&d_ThreadTime, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_ThreadTime");
+#endif
 
 	timer.Start();
 
@@ -1005,13 +1032,16 @@ TreeResult TreeMatcher::Match(IPSet set)
 	GpuAssert(cudaMemcpy(result.SortedSubnetsBits, Tree.d_SortedSubnetBits, 33 * Tree.Size * sizeof(char), cudaMemcpyDeviceToHost), "Cannot copy memory to SortedSubnetsBits");
 	GpuAssert(cudaMemcpy(result.IPsList, d_IPList, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to IPsList");
 
+#ifndef NO_THREADS_TRACE
+
 	GpuAssert(cudaMemcpy(result.ThreadTimeStart, d_ThreadTimeStart, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTimeStart");
 	GpuAssert(cudaMemcpy(result.ThreadTimeEnd, d_ThreadTimeEnd, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to ThreadTimeEnd");
-
-	GpuAssert(cudaFree(d_MatchedIndexes), "Cannot free d_MatchedIndexes");
-	GpuAssert(cudaFree(d_ThreadTime), "Cannot free dev_thread_time");
 	GpuAssert(cudaFree(d_ThreadTimeStart), "Cannot free dev_thread_time_start");
 	GpuAssert(cudaFree(d_ThreadTimeEnd), "Cannot free dev_thread_time_end");
+
+#endif
+
+	GpuAssert(cudaFree(d_MatchedIndexes), "Cannot free d_MatchedIndexes");
 	GpuAssert(cudaFree(d_IPList), "Cannot free d_IPList");
 
 	result.MatchingTime = timer.Stop();
