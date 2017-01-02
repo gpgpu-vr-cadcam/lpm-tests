@@ -217,8 +217,11 @@ public:
 												PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps, ml));
 
 		ResultsFile.open("TestResults.txt");
+
+#ifndef NO_THREADS_TRACE
 		ThreadsFile.open("ThreadsTimes.txt");
 		ThreadsFileLines = 0;
+#endif
 	}
 
 	Environment()

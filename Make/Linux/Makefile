@@ -1,7 +1,12 @@
 NVCC=nvcc
 SOURCE=../../Source
 BIN=../../Bin
-NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11
+
+# Use this options for disabling threads time trace
+# NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11 -D NO_THREADS_TRACE
+
+# Use this options for enabling threads time trace
+ NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11
 
 GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
 
@@ -14,12 +19,21 @@ GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
 PERF_TEST=$(BIN)/Tmp/PerformanceTests.o $(BIN)/Tmp/PerformanceTestsMain.o
 BASIC_TEST=$(BIN)/Tmp/IPSetTests.o $(BIN)/Tmp/TreeMatcherTests.o $(BIN)/Tmp/TestsMain.o
 TEST_RUNNERS=$(BIN)/PerformanceTests $(BIN)/BasicTests
+RUNNER=$(BIN)/Tmp/Runner.o $(BIN)/Runner
 
-all: lib test
+all: lib test runner
+
+runner: bin $(LIB) $(RUNNER)
 
 test: bin $(LIB) $(PERF_TEST) $(BASIC_TEST) $(TEST_RUNNERS)
 
 lib: bin $(LIB)
+
+$(BIN)/Runner: $(LIB) $(BIN)/Tmp/Runner.o
+	$(NVCC) $(NVCC_FLAGS) -lpthread -o $(BIN)/Runner $(LIB) $(BIN)/Tmp/Runner.o
+
+$(BIN)/Tmp/Runner.o: $(SOURCE)/Runners/Runner.cpp
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Runners/Runner.cpp -o $(BIN)/Tmp/Runner.o
 
 $(BIN)/BasicTests: $(LIB) $(BASIC_TEST)
 	$(NVCC) $(NVCC_FLAGS) -lpthread -o $(BIN)/BasicTests $(LIB) $(BASIC_TEST) $(GTEST)

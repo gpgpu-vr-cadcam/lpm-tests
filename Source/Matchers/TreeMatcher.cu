@@ -1008,13 +1008,21 @@ TreeResult TreeMatcher::Match(IPSet set)
 
 	if (!UseMidLevels)
 	{
-		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd);
+		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, set.Size, Tree.MinPrefix
+#ifndef NO_THREADS_TRACE
+			, d_ThreadTimeStart, d_ThreadTimeEnd
+#endif
+			);
 		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnet kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnet kernel");
 	}
 	else
 	{
-		AssignIPSubnetWithMidLevels << < blocks, threads>> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level8, Tree.d_Level16, Tree.d_Level24, set.Size, Tree.MinPrefix, d_ThreadTimeStart, d_ThreadTimeEnd);
+		AssignIPSubnetWithMidLevels << < blocks, threads>> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level8, Tree.d_Level16, Tree.d_Level24, set.Size, Tree.MinPrefix
+#ifndef NO_THREADS_TRACE
+			, d_ThreadTimeStart, d_ThreadTimeEnd
+#endif
+			);
 		GpuAssert(cudaGetLastError(), "Error while launching AssignIPSubnetWithMidLevels kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running AssignIPSubnetWithMidLevels kernel");
 	}

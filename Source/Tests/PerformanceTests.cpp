@@ -28,17 +28,26 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	TreeResult result = matcher.Match(matchSet);
 
 	//then
+#ifndef NO_THREADS_TRACE
 	int startLine = ENV.ThreadsFileLines;
 	ENV.ThreadsFileLines += matchSet.Size;
+#endif
 
 	ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
 		<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
 		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";" << testCase.UseMidLevels << ";"
-		<< matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << ";"
-		<< startLine << ";" << ENV.ThreadsFileLines - 1 << endl;
+		<< matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime;
+
+#ifndef NO_THREADS_TRACE
+		ENV.ResultsFile << ";" << startLine << ";" << ENV.ThreadsFileLines - 1;
+#endif
+		
+		 ENV.ResultsFile << endl;
 	
+#ifndef NO_THREADS_TRACE
 	for (int i = 0; i < matchSet.Size; ++i)
 		ENV.ThreadsFile << i << ";" << result.ThreadTimeStart[i] << ";" << result.ThreadTimeEnd[i] << endl;
+#endif
 
 	//cleanup
 	GpuAssert(cudaSetDevice(setup.DeviceID), "Cannot set cuda device.");

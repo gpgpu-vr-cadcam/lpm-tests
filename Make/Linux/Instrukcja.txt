@@ -1,6 +1,8 @@
-W 4 linii Makefile'a zdefiniowana zmienna NVCC_FLAGS to parametry kompilatora, które idą do każdego jego wywołania.
+W 6 i 9 linii Makefile'a zdefiniowana zmienna NVCC_FLAGS to parametry kompilatora, które idą do każdego jego wywołania. Jedna wersja generuje kod, który nie śledzi czasu działania wątków.
 
-Po zbudowaniu w głównym katalogu (lpm) utworzy się folder Bin. W nim 2 pliki wykonywalne: BasicTests i PerformanceTests. Oba mają jeden parametr uruchomieniowy - ściężkę do katalogu z plikami testowymi. Przykładowe uruchomienie z katalogu Bin:
+Po zbudowaniu w głównym katalogu (lpm) utworzy się folder Bin. W nim 3 pliki wykonywalne: BasicTests, PerformanceTests i Runner. 
+
+BasicTests, PerformanceTests mają jeden parametr uruchomieniowy - ściężkę do katalogu z plikami testowymi. Przykładowe uruchomienie z katalogu Bin:
 ./PerformanceTests ../TestData/
 
 BasicTests uruchamia ogólne testy, żeby sprawdzić czy wszystko jest ok. Dość długo to trwa, więc puściłem już na gpunode1 i wyszstko jest w porządku.
@@ -14,14 +16,27 @@ Test wydajnościowy:
 	-budujemy drzewo na podstawie ModelSetu
 	-wyszukujemy w nim IP z MatchSetu
 
-To jest scenariusz jedego testu. Po  jego wykonaniu, do pliku z wynikami (TestResults.txt w folderze Bin) jest dopisywany wynik w formacie:
+To jest scenariusz jedego testu. Po  jego wykonaniu, do pliku z wynikami jest dopisywany wynik w formacie:
 
-deviceID;bloki;wątki;rozmiar_ModelSet;rozmiar_MatchSet1;rozmiar_MatchSet2;ścieżka_pliku_źródłowego;czy_posortowano;czy_użyto_leveli_pośrednich;czas_budowy_drzewa;czas_sortowania;czas_wyszukiwania;
-Dla każdego z wyszukiwanych IP jest linia:
-id;czast_start;czas_end;
-Pusta linia.
+deviceID;bloki;wątki;rozmiar_ModelSet;rozmiar_MatchSet1;rozmiar_MatchSet2;ścieżka_pliku_źródłowego;czy_posortowano;czy_użyto_leveli_pośrednich;czas_budowy_drzewa;czas_sortowania;czas_wyszukiwania;pierwsza_linia_trace;ostatnia_linia_trace
+
+A do pliku ThreadsTimes.txt są dopisywane linie:
+	Dla każdego z wyszukiwanych IP jest linia:
+	id;czast_start;czas_end;
 
 Każdy taki test jest wykonywany dla wszystkich plików testowych (10 sztuk) dla wszystkich kombinacji parametrów, zdefiniowanych w pliku Source/Tests/Tests.h w funkcji InitPerformanceTests. Parametr Seed to źródło dla srand, więc podanie np. 5 różnych liczb spowoduje wykonanie tego testu 5 razy na tym samym pliku losując różne podzbiory itd. Każde wykonanie zapisze osobne wyniki do pliku jak wyżej.
 
 Uwagi:
 	-w plikach z danymi jest od 400k do 600k masek, dlatego maksymalny rozmiar ModelSetu do 400k (przy większym może się wywalić)
+	-musi być / na końcu
+	-w katalogu muszą być wszystkie pliki testowe
+
+Runner pozwala uruchomić osobny eksperyment. Ma parametry:
+
+bloki, wątki, deviceID, seed, modelSetSize, matchSet1Size, matchSet2Size, usePresorting (true:false), useMidLevels (true:false), ścieżkaPlikuZDanymi, ścieżkaDoZapisaniaTraceWątków (jeśli było zbudowane z zbieraniem czasów)
+
+Na konsolę wypisuje wynik, tak samo jak testy wydajnościowe do pliku (poza informacją o liniach w pliku z czasami).
+Jeśli były zbierane czasy, to do podanego pliku wpisuje je tak samo jak testy wydajnościowe.
+
+Przykład dla uruchomienia z folderu Make/Linux:
+./../../Bin/Runner 1024 1024 0 1234 100000 10000 10000 false true ../../TestData/data-raw-table_tokyo_012016.txt threadsTrace.txt
