@@ -28,15 +28,17 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	TreeResult result = matcher.Match(matchSet);
 
 	//then
+	int startLine = ENV.ThreadsFileLines;
+	ENV.ThreadsFileLines += matchSet.Size;
+
 	ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
 		<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
-		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";" << testCase.UseMidLevels << ";";
-	ENV.ResultsFile << matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << ";" << endl;
+		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";" << testCase.UseMidLevels << ";"
+		<< matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << ";"
+		<< startLine << ";" << ENV.ThreadsFileLines - 1 << endl;
 	
 	for (int i = 0; i < matchSet.Size; ++i)
-		ENV.ResultsFile << i << ";" << result.ThreadTimeStart[i] << ";" << result.ThreadTimeEnd[i] << ";" << endl;
-
-	ENV.ResultsFile << endl;
+		ENV.ThreadsFile << i << ";" << result.ThreadTimeStart[i] << ";" << result.ThreadTimeEnd[i] << endl;
 
 	//cleanup
 	GpuAssert(cudaSetDevice(setup.DeviceID), "Cannot set cuda device.");

@@ -137,6 +137,8 @@ public:
 
 	vector<PerformanceTest> PerformanceTests;
 	ofstream ResultsFile;
+	ofstream ThreadsFile;
+	int ThreadsFileLines;
 
 	void InitFiles()
 	{
@@ -215,6 +217,8 @@ public:
 												PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps, ml));
 
 		ResultsFile.open("TestResults.txt");
+		ThreadsFile.open("ThreadsTimes.txt");
+		ThreadsFileLines = 0;
 	}
 
 	Environment()
