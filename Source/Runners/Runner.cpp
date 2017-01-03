@@ -44,7 +44,7 @@ int main(int argc, char ** argv)
 
 	cout << deviceID << ";" << blocks << ";" << threads << ";"
 		<< modelSubsetSize << ";" << matchSubsetSize << ";" << randomMasksSetSize << ";"
-		<< argv[10] << ";" << usePresorting << ";" << useMidLevels << ";"
+		<< argv[10] << ";" << (usePresorting ? "TRUE" : "FALSE") << ";" << (useMidLevels ? "TRUE" : "FALSE") << ";"
 		<< matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime << endl;
 
 	//cleanup
