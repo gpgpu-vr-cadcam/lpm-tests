@@ -20,8 +20,8 @@ int main(int argc, char ** argv)
 	int modelSubsetSize = atoi(argv[5]);
 	int matchSubsetSize = atoi(argv[6]);
 	int randomMasksSetSize = atoi(argv[7]);
-	bool usePresorting = strcmp(argv[8], "true") == 0;
-	bool useMidLevels = strcmp(argv[9], "true") == 0;
+	bool usePresorting = strcmp(argv[8], "true") == 0 || strcmp(argv[8], "True") == 0 || strcmp(argv[8], "TRUE") == 0;
+	bool useMidLevels = strcmp(argv[9], "true") == 0 || strcmp(argv[9], "True") == 0 || strcmp(argv[9], "TRUE") == 0;
 
 	srand(seed);
 	GpuSetup setup(blocks, threads, deviceID);
