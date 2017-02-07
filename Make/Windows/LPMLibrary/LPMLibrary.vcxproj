@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\Core\BaseResult.h" />
     <ClInclude Include="..\..\..\Source\Core\IPSet.cuh" />
+    <ClInclude Include="..\..\..\Source\Matchers\RTreeMatcher.cuh" />
     <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh" />
     <ClInclude Include="..\..\..\Source\Tests\Tests.h" />
     <ClInclude Include="..\..\..\Source\Utils\Utils.h" />
@@ -30,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\..\Source\Core\IPSet.cu" />
+    <CudaCompile Include="..\..\..\Source\Matchers\RTreeMatcher.cu" />
     <CudaCompile Include="..\..\..\Source\Matchers\TreeMatcher.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

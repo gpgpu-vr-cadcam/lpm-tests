@@ -67,7 +67,6 @@ class IPSubsetTest : public IPSetLoadTest
 public:
 	int SubsetSize;
 
-
 	IPSubsetTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size)
 		: IPSetLoadTest(file, setup, masksToLoad),
 		  SubsetSize(subset_size) {}
@@ -77,6 +76,23 @@ public:
 		return os
 			<< static_cast<const IPSetLoadTest&>(obj)
 			<< " SubsetSize: " << obj.SubsetSize;
+	}
+};
+
+class RTreeMatcherTest : public IPSubsetTest
+{
+public:
+	int R;
+
+	RTreeMatcherTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size, int r)
+		: IPSubsetTest(file, setup, masksToLoad, subset_size),
+		  R(r) {}
+
+	friend std::ostream& operator<<(std::ostream& os, const RTreeMatcherTest& obj)
+	{
+		return os
+			<< static_cast<const IPSubsetTest&>(obj)
+			<< " R: " << obj.R;
 	}
 };
 
@@ -134,6 +150,7 @@ public:
 	vector<IPSetTest> IPSetTests;
 	vector<IPSetLoadTest> IPSetLoadTests;
 	vector<IPSubsetTest> SubsetTests;
+	vector<RTreeMatcherTest> RTreeMatcherTests;
 
 	vector<PerformanceTest> PerformanceTests;
 	ofstream ResultsFile;
@@ -192,6 +209,15 @@ public:
 				SubsetTests.push_back(IPSubsetTest(t.File, t.Setup, t.MasksToLoad, s));
 	}
 
+	void InitRTreeMatcherTests()
+	{
+		vector<int> rs = { 4, 8 };
+
+		for (auto t : SubsetTests)
+			for (auto r : rs)
+				RTreeMatcherTests.push_back(RTreeMatcherTest(t.File, t.Setup, t.MasksToLoad, t.SubsetSize, r));
+	}
+
 	void InitPerformanceTests()
 	{
 		vector<int> Seeds = { 2341};
@@ -231,6 +257,7 @@ public:
 		InitGenerateSetups();
 		InitIPSetTests();
 		InitSubsetTests();
+		InitRTreeMatcherTests();
 
 		#ifdef PERF_TEST
 			InitPerformanceTests();
