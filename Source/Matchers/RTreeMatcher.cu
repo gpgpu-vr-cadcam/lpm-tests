@@ -217,18 +217,16 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 	}
 
 	//Filling children of tree nodes
-	//TODO: Childrencount mog³oby byæ L-1
-
-	int *h_ChildrenCount = new int[L];
-	for(int l = 0; l < L; ++l)
+	int *h_ChildrenCount = new int[L-1];
+	for(int l = 0; l < L-1; ++l)
 		h_ChildrenCount[l] = 2 << (h_R[l] - 1);
 
-	GpuAssert(cudaMalloc((void**)&ChildrenCount, L * sizeof(int)), "Cannot init Children memory");
+	GpuAssert(cudaMalloc((void**)&ChildrenCount, (L-1) * sizeof(int)), "Cannot init Children memory");
 	GpuAssert(cudaMalloc((void**)&Children, (L-1) * sizeof(int*)), "Cannot init Children memory");
 
-	GpuAssert(cudaMemcpy(ChildrenCount, h_ChildrenCount, L * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy Children memory");
+	GpuAssert(cudaMemcpy(ChildrenCount, h_ChildrenCount, (L-1) * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy Children memory");
 
-	h_Children = new int*[L];
+	h_Children = new int*[L-1];
 	for(int l = 0; l < L-1; ++l)
 		GpuAssert(cudaMalloc((void**)&h_Children[l], LevelsSizes[l] * h_ChildrenCount[l] * sizeof(int)), "Cannot init children memory");
 
@@ -281,8 +279,6 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 	{
 		shift += totalListItemsPerLevel[l - 1];
 		thrust::for_each_n(thrust::device, h_ListsStarts[l], LevelsSizes[l], thrust::placeholders::_1 += shift);
-
-		//TODO: Zerowanie startów pustych list?
 	}
 
 	//Filling list items
@@ -429,8 +425,9 @@ void RTreeMatcher::BuildModel(IPSet set)
 __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *result, int **ListsStarts, int **ListsLenghts, int *Lenghts, int L, int *R, int *rPreSums, int *ListItems,
 	int **ips, int Count)
 {
-	extern __shared__ int m[];
-	int *nodesToCheck = m + threadIdx.x * L;
+	//TODO: Czy wyrównane odczyty z pamiêci dzielnoej mog¹ byæ szybsze?
+	extern __shared__ int sharedMem[];
+	int *nodesToCheck = sharedMem + threadIdx.x * L;
 
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 	while( i < Count)
