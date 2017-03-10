@@ -419,7 +419,10 @@ void RTreeMatcher::BuildModel(IPSet set)
 {
 	Setup = set.Setup;
 	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
+	Timer timer;
+	timer.Start();
 	Model.Build(set, Setup);
+	ModelBuildTime = timer.Stop();
 	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
 }
 
@@ -466,6 +469,9 @@ RTreeResult RTreeMatcher::Match(IPSet set)
 	RTreeResult result(set.Size);
 	result.MatchedMaskIndex = new int[set.Size];
 
+	Timer timer;
+	timer.Start();
+
 	int **d_IPs;
 	int *d_IPsLenghts;
 
@@ -505,6 +511,8 @@ RTreeResult RTreeMatcher::Match(IPSet set)
 	GpuAssert(cudaFree(d_Result), "Cannot free Result memory");
 	GpuAssert(cudaFree(d_IPs), "Cannot free d_IPs memory");
 	GpuAssert(cudaFree(d_IPsLenghts), "Cannot free d_IPsLenghts memory");
+
+	result.MatchingTime = timer.Stop();
 
 	return result;
 }
