@@ -3,6 +3,7 @@
 
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
+#include <pplinterface.h>
 
 __global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, int *Lenghts, unsigned char *IPData)
 {
@@ -91,25 +92,30 @@ __global__ void FillListsLenghts(int l, int *R, int *rSums, int *rPreSums,  int 
 
 __global__ void FillListItems(int l, int *R, int *rSums, int *rPreSums, int Count, int **startIndexes, int ** endIndexes, int **ListsStarts, int *LevelsSizes, int *Lenghts, int * ListItems)
 {
-	int node = blockIdx.x * blockDim.x + threadIdx.x;
+	extern __shared__ int insertShift[];
+
+	int node = blockIdx.x;
 	while(node < LevelsSizes[l])
 	{
-		int insertShift = 0;
+		if(threadIdx.x == 0)
+			*insertShift = 0;
+
 		for (int maskLenght = rSums[l]; maskLenght > rPreSums[l]; --maskLenght)
 		{
-			for (int i = startIndexes[l][node]; i < endIndexes[l][node]; ++i)
+			int i = startIndexes[l][node] + threadIdx.x;
+			while (i < endIndexes[l][node])
+			{
 				if (Lenghts[i] == maskLenght)
-				{
-					int index = (ListsStarts[l][node]) + insertShift;
-					ListItems[index] = i;
-					++insertShift;
-				}
+					ListItems[(ListsStarts[l][node]) + atomicAdd(insertShift, 1)] = i;
+				
+				i += blockDim.x;
+			}
 		}
-
-		node += gridDim.x * blockDim.x;
+		__syncthreads();
+		node += gridDim.x;
 	}
 
-	//TODO: Ten kernel trzeba zrobiæ lepiej, bo dla jednego wêz³a dzia³a tylko jednen w¹tek. Prawdopodobnie trzeba bêdzie napisaæ osobne kernele dla "ma³ych" i "du¿ych" poziomów i u¿yæ _atomicAdd na insertShift.
+	//TODO: Dedykowane strategie wype³niania zale¿ne od poziomu (iloœci wêz³ów, d³ugoœci list)
 }
 
 void RTreeModel::Build(IPSet set, GpuSetup setup)
@@ -284,8 +290,7 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 	//Filling list items
 	for(int l = 0; l < L; ++l)
 	{
-		//TODO: Ten kernel jest d³ugi, bo na poziomach gdzie jest ma³o wêz³ów dzia³a ma³o w¹tków
-		FillListItems << <setup.Blocks, setup.Threads >> > (l, R, rSums, rPreSums, Count, startIndexes, endIndexes, ListsStarts, d_LevelSizes, Lenghts, ListItems);
+		FillListItems << <setup.Blocks, setup.Threads, setup.Blocks * sizeof(int) >> > (l, R, rSums, rPreSums, Count, startIndexes, endIndexes, ListsStarts, d_LevelSizes, Lenghts, ListItems);
 		GpuAssert(cudaGetLastError(), "Error while launching FillListItems kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running FillListItems kernel");
 	}

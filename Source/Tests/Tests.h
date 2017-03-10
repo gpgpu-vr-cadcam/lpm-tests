@@ -92,7 +92,7 @@ public:
 	{
 		os << static_cast<const IPSubsetTest&>(obj) << " {";
 		for (int i = 0; i < obj.R.size(); ++i)
-			os << i << ",";
+			os << obj.R[i] << ",";
 		os << " } ";
 
 		return os;
