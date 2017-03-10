@@ -427,9 +427,10 @@ void RTreeMatcher::BuildModel(IPSet set)
 }
 
 __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *result, int **ListsStarts, int **ListsLenghts, int *Lenghts, int L, int *R, int *rPreSums, int *ListItems,
-	int **ips, int Count, int *allNodesToFill)
+	int **ips, int Count)
 {
-	int *nodesToCheck = allNodesToFill + blockIdx.x * blockDim.x * L + threadIdx.x * L;
+	extern __shared__ int m[];
+	int *nodesToCheck = m + threadIdx.x * L;
 
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 	while( i < Count)
@@ -495,19 +496,15 @@ RTreeResult RTreeMatcher::Match(IPSet set)
 	GpuAssert(cudaMalloc((void**)&d_Result, result.IpsToMatchCount * sizeof(int)), "Cannot allocate memory for Result");
 	thrust::fill_n(thrust::device, d_Result, result.IpsToMatchCount, -1);
 
-	int *d_nodesToFill;
-	GpuAssert(cudaMalloc((void**)&d_nodesToFill, Setup.Blocks * Setup.Threads * Model.L * sizeof(int)), "Cannot allocate memory for nodesToFill");
-	thrust::fill_n(thrust::device, d_nodesToFill, Setup.Blocks * Setup.Threads * Model.L, 0);
 
 	//Matching
-	MatchIPs << <Setup.Blocks, Setup.Threads>> > (Model.Children, Model.ChildrenCount, Model.Masks, d_Result, Model.ListsStarts, Model.ListsLenghts,
-		Model.Lenghts, Model.L, Model.R, Model.rPreSums, Model.ListItems, d_IPs, set.Size, d_nodesToFill);
+	MatchIPs << <Setup.Blocks, Setup.Threads, Setup.Threads * Model.L * sizeof(int)>> > (Model.Children, Model.ChildrenCount, Model.Masks, d_Result, Model.ListsStarts, Model.ListsLenghts,
+		Model.Lenghts, Model.L, Model.R, Model.rPreSums, Model.ListItems, d_IPs, set.Size);
 	GpuAssert(cudaGetLastError(), "Error while launching MatchIPs kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running MatchIPs kernel");
 
 	GpuAssert(cudaMemcpy(result.MatchedMaskIndex, d_Result, result.IpsToMatchCount * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy Result data");
 
-	GpuAssert(cudaFree(d_nodesToFill), "Cannot free nodes to fill");
 	GpuAssert(cudaFree(d_Result), "Cannot free Result memory");
 	GpuAssert(cudaFree(d_IPs), "Cannot free d_IPs memory");
 	GpuAssert(cudaFree(d_IPsLenghts), "Cannot free d_IPsLenghts memory");
