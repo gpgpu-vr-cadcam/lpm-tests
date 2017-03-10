@@ -211,7 +211,7 @@ public:
 
 	void InitRTreeMatcherTests()
 	{
-		vector<int> rs = { 4, 8 };
+		vector<int> rs = { 4, 5, 6, 8 };
 
 		for (auto t : SubsetTests)
 			for (auto r : rs)

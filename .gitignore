@@ -8,3 +8,7 @@
 /Make/Windows/packages/googletest.v140.windesktop.static.rt-dyn.1.7.0.1
 /Make/Windows/PerformanceTests/TestResults.txt
 /Bin/TestResults.txt
+/Other/LPMDataViz/bin/Debug
+/Other/LPMDataViz/obj/Debug
+/Other/LPMDataViz
+/Other/LPMDataViz2
