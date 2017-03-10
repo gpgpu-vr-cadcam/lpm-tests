@@ -10,7 +10,10 @@ public:
 	int Count;
 
 	//Bits per level
-	int R;
+	vector<int> h_R;
+	int *R;
+	int *rSums;
+	int *rPreSums;
 
 	//Number of levels
 	int L;
@@ -24,7 +27,7 @@ public:
 	int* LevelsSizes;
 
 	//Number of possible children of tree node
-	int ChildrenCount;
+	int *ChildrenCount;
 
 	//Children arrays for tree nodes
 	int** Children;
@@ -86,10 +89,10 @@ public:
 	float ModelBuildTime;
 
 
-	RTreeMatcher(int r)
+	RTreeMatcher(vector<int> r)
 		: ModelBuildTime(0)
 	{
-		Model.R = r;
+		Model.h_R = r;
 	}
 
 	void BuildModel(IPSet set);

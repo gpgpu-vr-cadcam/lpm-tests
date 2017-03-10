@@ -4,7 +4,7 @@
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 
-__global__ void CopyMasks(int Count, int R, int L, int** Masks, int *Lenghts, unsigned char *IPData)
+__global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, int *Lenghts, unsigned char *IPData)
 {
 	int mask = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -20,13 +20,8 @@ __global__ void CopyMasks(int Count, int R, int L, int** Masks, int *Lenghts, un
 			address |= part << (8 * (3 - i));
 		}
 
-		for (int i = 0; i < L - 1; ++i)
-			Masks[i][mask] = (address >> (((32 % R) == 0 ? R : (32 % R)) + (L - 2 - i) * R)) & ((2 << R - 1) - 1);
-
-		if ((32 % R) == 0)
-			Masks[(L - 1)][mask] = address & ((2 << (R - 1)) - 1);
-		else
-			Masks[(L - 1)][mask] = address & ((2 << ((32 % R) - 1)) - 1);
+		for (int l = 0; l < L; ++l)
+			Masks[l][mask] = (address >> (32 - rSums[l])) & ((2 << R[l] - 1) - 1);
 
 		mask += blockDim.x * gridDim.x;
 	}
@@ -59,7 +54,7 @@ __global__ void FillIndexes(int Count, int l, int **nodesIndexes, int **startInd
 	}
 }
 
-__global__ void FillChildren(int l, int *LevelsSizes, int **startIndexes, int **endIndexes, int **Children, int ChildrenCount, int **Masks, int **nodesIndexes)
+__global__ void FillChildren(int l, int *LevelsSizes, int **startIndexes, int **endIndexes, int **Children, int *ChildrenCount, int **Masks, int **nodesIndexes)
 {
 	int node = blockIdx.x;
 	while (node < LevelsSizes[l])
@@ -68,7 +63,7 @@ __global__ void FillChildren(int l, int *LevelsSizes, int **startIndexes, int **
 		while (i < endIndexes[l][node])
 		{
 			if (nodesIndexes[l + 1][i] > 0)
-				Children[l][node * ChildrenCount + Masks[l][i]] = nodesIndexes[l + 1][i];
+				Children[l][node * ChildrenCount[l] + Masks[l][i]] = nodesIndexes[l + 1][i];
 
 			i += blockDim.x;
 		}
@@ -76,14 +71,14 @@ __global__ void FillChildren(int l, int *LevelsSizes, int **startIndexes, int **
 	}
 }
 
-__global__ void FillListsLenghts(int l, int R,  int *LevelsSizes, int **startIndexes, int **endIndexes, int *Lenghts, int **ListsLenghts)
+__global__ void FillListsLenghts(int l, int *R, int *rSums, int *rPreSums,  int *LevelsSizes, int **startIndexes, int **endIndexes, int *Lenghts, int **ListsLenghts)
 {
 	int node = blockIdx.x * blockDim.x + threadIdx.x;
 	while(node < LevelsSizes[l])
 	{
 		int lenght = 0;
 		for (int i = startIndexes[l][node]; i < endIndexes[l][node]; ++i)
-			if (Lenghts[i] > l * R && Lenghts[i] <= (l + 1) * R)
+			if (Lenghts[i] > rPreSums[l] && Lenghts[i] <= rSums[l])
 				++lenght;
 
 		ListsLenghts[l][node] = lenght;
@@ -94,13 +89,13 @@ __global__ void FillListsLenghts(int l, int R,  int *LevelsSizes, int **startInd
 	//TODO: Ten kernel mo¿na zrobiæ lepiej. Bloki chodz¹ po wêz³ach na danym poziomie. W¹tki zliczaj¹ sumy czêœciowe. Potem redukcja w obrêbie bloku i wpisanie wartoœci.
 }
 
-__global__ void FillListItems(int l, int R, int Count, int **startIndexes, int ** endIndexes, int **ListsStarts, int *LevelsSizes, int *Lenghts, int * ListItems)
+__global__ void FillListItems(int l, int *R, int *rSums, int *rPreSums, int Count, int **startIndexes, int ** endIndexes, int **ListsStarts, int *LevelsSizes, int *Lenghts, int * ListItems)
 {
 	int node = blockIdx.x * blockDim.x + threadIdx.x;
 	while(node < LevelsSizes[l])
 	{
 		int insertShift = 0;
-		for (int maskLenght = ((l + 1) * R); maskLenght > l * R; --maskLenght)
+		for (int maskLenght = rSums[l]; maskLenght > rPreSums[l]; --maskLenght)
 		{
 			for (int i = startIndexes[l][node]; i < endIndexes[l][node]; ++i)
 				if (Lenghts[i] == maskLenght)
@@ -120,7 +115,16 @@ __global__ void FillListItems(int l, int R, int Count, int **startIndexes, int *
 void RTreeModel::Build(IPSet set, GpuSetup setup)
 {
 	Count = set.Size;
-	L = 32 / R + ((32 % R) == 0 ? 0 : 1);
+	L = h_R.size();
+
+	//Allocating memory for Rs
+	GpuAssert(cudaMalloc((void**)&R, L * sizeof(int)), "Cannot allocate memory for R");
+	GpuAssert(cudaMalloc((void**)&rSums, L * sizeof(int)), "Cannot allocate memory for R");
+	GpuAssert(cudaMalloc((void**)&rPreSums, L * sizeof(int)), "Cannot allocate memory for R");
+
+	GpuAssert(cudaMemcpy(R, h_R.data(), L * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy R memory");
+	thrust::inclusive_scan(thrust::device, R, R + L, rSums);
+	thrust::exclusive_scan(thrust::device, R, R + L, rPreSums);
 
 	//TODO: Niepotrzebne jest budowanie wêz³ów, je¿eli ¿adna maska w zakresie nie jest dostatecznie d³uga.
 
@@ -136,7 +140,7 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 	delete[] h_Masks;
 
 	//Copying masks from IPSet and partitioning them
-	CopyMasks <<< setup.Blocks, setup.Threads >>> (Count,  R,  L, Masks, Lenghts, set.d_IPData);
+	CopyMasks <<< setup.Blocks, setup.Threads >>> (Count,  R, rSums,  L, Masks, Lenghts, set.d_IPData);
 	GpuAssert(cudaGetLastError(), "Error while launching CopyMasks kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running CopyMasks kernel");
 
@@ -213,14 +217,24 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 	}
 
 	//Filling children of tree nodes
-	ChildrenCount = 2 << (R - 1);
+	//TODO: Childrencount mog³oby byæ L-1
+
+	int *h_ChildrenCount = new int[L];
+	for(int l = 0; l < L; ++l)
+		h_ChildrenCount[l] = 2 << (h_R[l] - 1);
+
+	GpuAssert(cudaMalloc((void**)&ChildrenCount, L * sizeof(int)), "Cannot init Children memory");
 	GpuAssert(cudaMalloc((void**)&Children, (L-1) * sizeof(int*)), "Cannot init Children memory");
+
+	GpuAssert(cudaMemcpy(ChildrenCount, h_ChildrenCount, L * sizeof(int), cudaMemcpyHostToDevice), "Cannot copy Children memory");
 
 	h_Children = new int*[L];
 	for(int l = 0; l < L-1; ++l)
-		GpuAssert(cudaMalloc((void**)&h_Children[l], LevelsSizes[l] * ChildrenCount * sizeof(int)), "Cannot init children memory");
+		GpuAssert(cudaMalloc((void**)&h_Children[l], LevelsSizes[l] * h_ChildrenCount[l] * sizeof(int)), "Cannot init children memory");
 
 	GpuAssert(cudaMemcpy(Children, h_Children, (L - 1) * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy Children memory");
+
+	delete[] h_ChildrenCount;
 
 	for (int l = 0; l < L - 1; ++l)
 	{
@@ -248,7 +262,7 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 
 	for(int l = 0; l < L; ++l)
 	{
-		FillListsLenghts << <setup.Blocks, setup.Threads >> > (l, R, d_LevelSizes, startIndexes, endIndexes, Lenghts, ListsLenghts);
+		FillListsLenghts << <setup.Blocks, setup.Threads >> > (l, R, rSums, rPreSums, d_LevelSizes, startIndexes, endIndexes, Lenghts, ListsLenghts);
 		GpuAssert(cudaGetLastError(), "Error while launching FillListsLenghts kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running FillListsLenghts kernel");
 	}
@@ -275,7 +289,7 @@ void RTreeModel::Build(IPSet set, GpuSetup setup)
 	for(int l = 0; l < L; ++l)
 	{
 		//TODO: Ten kernel jest d³ugi, bo na poziomach gdzie jest ma³o wêz³ów dzia³a ma³o w¹tków
-		FillListItems << <setup.Blocks, setup.Threads >> > (l, R, Count, startIndexes, endIndexes, ListsStarts, d_LevelSizes, Lenghts, ListItems);
+		FillListItems << <setup.Blocks, setup.Threads >> > (l, R, rSums, rPreSums, Count, startIndexes, endIndexes, ListsStarts, d_LevelSizes, Lenghts, ListItems);
 		GpuAssert(cudaGetLastError(), "Error while launching FillListItems kernel");
 		GpuAssert(cudaDeviceSynchronize(), "Error while running FillListItems kernel");
 	}
@@ -323,6 +337,15 @@ void RTreeModel::Dispose()
 		Masks = NULL;
 	}
 
+	if(R != NULL)
+	{
+		GpuAssert(cudaFree(R), "Cannot free R memory");
+		GpuAssert(cudaFree(rSums), "Cannot free rSums memory");
+		GpuAssert(cudaFree(rPreSums), "Cannot free rPreSums memory");
+
+		R = rSums = rPreSums = NULL;
+	}
+
 	if(Lenghts != NULL)
 	{
 		GpuAssert(cudaFree(Lenghts), "Cannot free Lenghts memory.");
@@ -341,9 +364,11 @@ void RTreeModel::Dispose()
 			GpuAssert(cudaFree(h_Children[l]), "Cannot free Children memory");
 
 		GpuAssert(cudaFree(Children), "Cannot free children memory");
+		GpuAssert(cudaFree(ChildrenCount), "Cannot free Children memory");
 		delete[] h_Children;
 
 		Children = h_Children = NULL;
+		ChildrenCount = NULL;
 	}
 
 	if(ListItems != NULL)
@@ -398,7 +423,7 @@ void RTreeMatcher::BuildModel(IPSet set)
 	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
 }
 
-__global__ void MatchIPs(int ** Children, int ChildrenCount, int **Masks, int *result, int **ListsStarts, int **ListsLenghts, int *Lenghts, int L, int R, int *ListItems,
+__global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *result, int **ListsStarts, int **ListsLenghts, int *Lenghts, int L, int *R, int *rPreSums, int *ListItems,
 	int **ips, int Count, int *allNodesToFill)
 {
 	int *nodesToCheck = allNodesToFill + blockIdx.x * blockDim.x * L + threadIdx.x * L;
@@ -413,7 +438,7 @@ __global__ void MatchIPs(int ** Children, int ChildrenCount, int **Masks, int *r
 		{
 			nodesToCheck[l] = 0;
 			if (nodesToCheck[l - 1] != 0)
-				nodesToCheck[l] = Children[l - 1][(nodesToCheck[l - 1] - 1)*ChildrenCount + Masks[l - 1][i]];
+				nodesToCheck[l] = Children[l - 1][(nodesToCheck[l - 1] - 1)*ChildrenCount[l - 1] + Masks[l - 1][i]];
 			else
 				break;
 		}
@@ -426,7 +451,7 @@ __global__ void MatchIPs(int ** Children, int ChildrenCount, int **Masks, int *r
 					s < ListsStarts[l][nodesToCheck[l] - 1] + ListsLenghts[l][nodesToCheck[l] - 1] && result[i] == -1;
 					++s)
 				{
-					int shitf = R - (Lenghts[ListItems[s]] - (R*l));
+					int shitf = R[l] - (Lenghts[ListItems[s]] - rPreSums[l]);
 					if (Masks[l][ListItems[s]] >> shitf == ips[l][i] >> shitf)
 						result[i] = ListItems[s];
 				}
@@ -456,7 +481,7 @@ RTreeResult RTreeMatcher::Match(IPSet set)
 
 	//Copying ips from IPSet and partitioning them
 	//TODO: Tutaj budowanie d_IPsLenghts jest niepotrzebne
-	CopyMasks << < Setup.Blocks, Setup.Threads >> > (set.Size, Model.R, Model.L, d_IPs, d_IPsLenghts, set.d_IPData);
+	CopyMasks << < Setup.Blocks, Setup.Threads >> > (set.Size, Model.R, Model.rSums, Model.L, d_IPs, d_IPsLenghts, set.d_IPData);
 	GpuAssert(cudaGetLastError(), "Error while launching CopyMasks kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running CopyMasks kernel");
 
@@ -470,7 +495,7 @@ RTreeResult RTreeMatcher::Match(IPSet set)
 
 	//Matching
 	MatchIPs << <Setup.Blocks, Setup.Threads>> > (Model.Children, Model.ChildrenCount, Model.Masks, d_Result, Model.ListsStarts, Model.ListsLenghts,
-		Model.Lenghts, Model.L, Model.R, Model.ListItems, d_IPs, set.Size, d_nodesToFill);
+		Model.Lenghts, Model.L, Model.R, Model.rPreSums, Model.ListItems, d_IPs, set.Size, d_nodesToFill);
 	GpuAssert(cudaGetLastError(), "Error while launching MatchIPs kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running MatchIPs kernel");
 

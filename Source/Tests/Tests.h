@@ -82,17 +82,20 @@ public:
 class RTreeMatcherTest : public IPSubsetTest
 {
 public:
-	int R;
+	vector<int> R;
 
-	RTreeMatcherTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size, int r)
+	RTreeMatcherTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size, vector<int> r)
 		: IPSubsetTest(file, setup, masksToLoad, subset_size),
 		  R(r) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const RTreeMatcherTest& obj)
 	{
-		return os
-			<< static_cast<const IPSubsetTest&>(obj)
-			<< " R: " << obj.R;
+		os << static_cast<const IPSubsetTest&>(obj) << " {";
+		for (int i = 0; i < obj.R.size(); ++i)
+			os << i << ",";
+		os << " } ";
+
+		return os;
 	}
 };
 
@@ -211,7 +214,13 @@ public:
 
 	void InitRTreeMatcherTests()
 	{
-		vector<int> rs = { 4, 5, 6, 8 };
+		vector<vector<int>> rs = 
+			{ 
+				{ 8, 8, 8, 8 },
+				{ 8, 8, 16 },
+				{ 5, 5, 6, 8, 8},
+				{ 4, 5, 4, 5, 6, 4, 2 },
+			};
 
 		for (auto t : SubsetTests)
 			for (auto r : rs)
