@@ -45,7 +45,7 @@ public:
 	int** h_ListsLenghts;
 
 	//Building model
-	void Build(IPSet set, GpuSetup setup);
+	void Build(IPSet &set, GpuSetup setup);
 
 	void Dispose();
 	~RTreeModel()
@@ -95,6 +95,6 @@ public:
 		Model.h_R = r;
 	}
 
-	void BuildModel(IPSet set);
-	RTreeResult Match(IPSet set);
+	void BuildModel(IPSet &set);
+	RTreeResult Match(IPSet &set);
 };

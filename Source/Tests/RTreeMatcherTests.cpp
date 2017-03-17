@@ -15,7 +15,6 @@ TEST_P(RTreeMatcherBuildModelTest, For)
 	matcher.BuildModel(set);
 
 	//then
-
 	cout << "Model build time:" << matcher.ModelBuildTime << endl;
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperIPSet_When_BuildModelCalled_Then_ModelCreated, RTreeMatcherBuildModelTest, testing::ValuesIn(ENV.RTreeMatcherTests));
