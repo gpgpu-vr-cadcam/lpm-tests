@@ -72,22 +72,52 @@ __global__ void FillChildren(int l, int *LevelsSizes, int **startIndexes, int **
 	}
 }
 
+__inline__ __device__
+int warpReduceSum(int val) 
+{
+	for (int offset = warpSize / 2; offset > 0; offset /= 2)
+		val += __shfl_down(val, offset);
+	return val;
+}
+
+__inline__ __device__
+int blockReduceSum(int val) 
+{
+
+	static __shared__ int shared[32];
+	int lane = threadIdx.x % warpSize;
+	int wid = threadIdx.x / warpSize;
+	val = warpReduceSum(val);  
+
+	if (lane == 0) 
+		shared[wid] = val;
+	__syncthreads();            
+				
+	val = (threadIdx.x < blockDim.x / warpSize) ? shared[lane] : 0;
+	if (wid == 0) 
+		val = warpReduceSum(val); 
+	return val;
+}
+
 __global__ void FillListsLenghts(int l, int *R, int *rSums, int *rPreSums,  int *LevelsSizes, int **startIndexes, int **endIndexes, int *Lenghts, int **ListsLenghts)
 {
-	int node = blockIdx.x * blockDim.x + threadIdx.x;
+	int node = blockIdx.x;
 	while(node < LevelsSizes[l])
 	{
-		int lenght = 0;
-		for (int i = startIndexes[l][node]; i < endIndexes[l][node]; ++i)
+		int counter = 0;
+		int i = startIndexes[l][node] + threadIdx.x;
+		while (i < endIndexes[l][node])
+		{
 			if (Lenghts[i] > rPreSums[l] && Lenghts[i] <= rSums[l])
-				++lenght;
-
-		ListsLenghts[l][node] = lenght;
-
-		node += gridDim.x * blockDim.x;
+				++counter;
+			i += blockDim.x;
+		}
+		
+		int sum = blockReduceSum(counter);
+		if (threadIdx.x == 0)
+			ListsLenghts[l][node] = sum;
+		node += gridDim.x;
 	}
-
-	//TODO: Ten kernel mo¿na zrobiæ lepiej. Bloki chodz¹ po wêz³ach na danym poziomie. W¹tki zliczaj¹ sumy czêœciowe. Potem redukcja w obrêbie bloku i wpisanie wartoœci.
 }
 
 __global__ void FillListItems(int l, int *R, int *rSums, int *rPreSums, int Count, int **startIndexes, int ** endIndexes, int **ListsStarts, int *LevelsSizes, int *Lenghts, int * ListItems)
