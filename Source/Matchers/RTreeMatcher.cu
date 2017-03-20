@@ -3,7 +3,6 @@
 
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
-#include <pplinterface.h>
 
 __global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, int *Lenghts, unsigned char *IPData)
 {

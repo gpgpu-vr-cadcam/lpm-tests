@@ -3,16 +3,16 @@ SOURCE=../../Source
 BIN=../../Bin
 
 # Use this options for disabling threads time trace
-# NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11 -D NO_THREADS_TRACE
+NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_60,code=sm_60 -std=c++11 -D NO_THREADS_TRACE
 
 # Use this options for enabling threads time trace
- NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11
+#NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_20,code=sm_20 -std=c++11
 
 GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
 
 UTILS=$(BIN)/Tmp/Utils.o
 CORE=$(BIN)/Tmp/IPSet.o
-MATCHERS=$(BIN)/Tmp/TreeMatcher.o
+MATCHERS=$(BIN)/Tmp/TreeMatcher.o $(BIN)/Tmp/RTreeMatcher.o
 LIB=$(CORE) $(UTILS) $(MATCHERS)
 
 GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
@@ -55,6 +55,9 @@ $(BIN)/Tmp/PerformanceTestsMain.o: $(SOURCE)/Tests/PerformanceTestsMain.cu $(SOU
 
 $(BIN)/Tmp/PerformanceTests.o: $(SOURCE)/Tests/PerformanceTests.cpp $(SOURCE)/Tests/Tests.h
 	$(NVCC) $(NVCC_FLAGS) -D PERF_TEST -c $(SOURCE)/Tests/PerformanceTests.cpp -o $(BIN)/Tmp/PerformanceTests.o
+
+$(BIN)/Tmp/RTreeMatcher.o: $(SOURCE)/Matchers/RTreeMatcher.cu $(SOURCE)/Matchers/RTreeMatcher.cuh $(SOURCE)/Core/BaseResult.h
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Matchers/RTreeMatcher.cu -o $(BIN)/Tmp/RTreeMatcher.o
 
 $(BIN)/Tmp/TreeMatcher.o: $(SOURCE)/Matchers/TreeMatcher.cu $(SOURCE)/Matchers/TreeMatcher.cuh $(SOURCE)/Core/BaseResult.h
 	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Matchers/TreeMatcher.cu -o $(BIN)/Tmp/TreeMatcher.o

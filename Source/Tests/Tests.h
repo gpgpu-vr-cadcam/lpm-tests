@@ -173,7 +173,6 @@ public:
 	{
 	}
 
-
 	friend std::ostream& operator<<(std::ostream& os, const RTreeMatcherPerformanceTestCase& obj)
 	{
 		os << static_cast<const PerformanceTest&>(obj) << " {";
@@ -274,10 +273,10 @@ public:
 
 	void InitPerformanceTests()
 	{
-		vector<int> Seeds = { 2341};
-		vector<int> ModelSetSize = { 100000 };
-		vector<int> MatchSet1Size = { 1000000 };
-		vector<int> MatchSet2Size = { 1000000 };
+		vector<int> Seeds = { 2341, 4563, 2543, 9383, 1234};
+		vector<int> ModelSetSize = { 100000, 200000, 300000, 400000 };
+		vector<int> MatchSet1Size = { 250000, 500000, 750000, 1000000 };
+		vector<int> MatchSet2Size = { 250000, 500000, 750000, 1000000 };
 		vector<int> Blocks = { 1024 };
 		vector<int> Threads = { 1024 };
 		vector<int> Devices = { 0 };
@@ -322,6 +321,9 @@ public:
 		//};
 		vector<vector<int>> rs =
 		{
+			{ 8, 8, 8, 8},
+			{ 8, 8, 4, 4, 4, 4},
+			{ 8, 4, 4, 4, 4, 8},
 			{ 4, 4, 4, 4, 4, 4, 4, 4 },
 			{ 5, 5, 6, 8, 8 },
 		};

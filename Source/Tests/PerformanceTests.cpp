@@ -62,7 +62,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
 	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
+//INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
 
 struct RTreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<RTreeMatcherPerformanceTestCase> {};
 TEST_P(RTreeMatcherPerformanceTest, For)
@@ -88,16 +88,13 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 	RTreeResult result = matcher.Match(matchSet);
 
 	//then
-	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
+	//cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 
-	//ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
-	//	<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
-	//	<< testCase.SourceSet.FileName << ";" << matcher.ModelBuildTime << ";" << result.MatchingTime;
-	//for (int i = 0; i < testCase.R.size(); ++i)
-	//	ENV.ResultsFile << testCase.R[i] << ",";
-	//ENV.ResultsFile << " } ";
-
-	//ENV.ResultsFile << endl;
+	ENV.ResultsFile << testCase.Seed << ";" << testCase.SourceSet.FileName << ";" << testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";" 
+		<< testCase.Blocks << ";" << testCase.Threads << ";" << testCase.DeviceID << ";" << "{";
+		for (int i = 0; i < testCase.R.size(); ++i)
+			ENV.ResultsFile << testCase.R[i] << ";";
+	ENV.ResultsFile << "}" << ";" << matcher.ModelBuildTime << ";" << result.MatchingTime << endl;
 
 }
 INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
