@@ -110,11 +110,8 @@ public:
 	int Blocks;
 	int Threads;
 	int DeviceID;
-	bool UsePresorting;
-	bool UseMidLevels;
 
-
-	PerformanceTest(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, bool use_presorting, bool use_mid_levels)
+	PerformanceTest(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id)
 		: Seed(seed),
 		  SourceSet(source_set),
 		  ModelSubsetSize(model_subset_size),
@@ -122,9 +119,7 @@ public:
 		  RandomMasksSetSize(random_masks_set_size),
 		  Blocks(blocks),
 		  Threads(threads),
-		  DeviceID(device_id),
-		  UsePresorting(use_presorting),
-		  UseMidLevels(use_mid_levels) {}
+		  DeviceID(device_id) {}
 
 
 	friend std::ostream& operator<<(std::ostream& os, const PerformanceTest& obj)
@@ -137,9 +132,56 @@ public:
 			<< " RandomMasksSetSize: " << obj.RandomMasksSetSize
 			<< " Blocks: " << obj.Blocks
 			<< " Threads: " << obj.Threads
-			<< " DeviceID: " << obj.DeviceID
+			<< " DeviceID: " << obj.DeviceID;
+	}
+};
+
+class TreeMatcherPerformanceTestCase : public PerformanceTest
+{
+public:
+	bool UsePresorting;
+	bool UseMidLevels;
+
+
+public:
+	TreeMatcherPerformanceTestCase(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, bool use_presorting, bool use_mid_levels)
+		: PerformanceTest(seed, source_set, model_subset_size, match_subset_size, random_masks_set_size, blocks, threads, device_id),
+		  UsePresorting(use_presorting),
+		  UseMidLevels(use_mid_levels)
+	{
+	}
+
+
+	friend std::ostream& operator<<(std::ostream& os, const TreeMatcherPerformanceTestCase& obj)
+	{
+		return os
+			<< static_cast<const PerformanceTest&>(obj)
 			<< " UsePresorting: " << obj.UsePresorting
 			<< " UseMidLevels: " << obj.UseMidLevels;
+	}
+};
+
+class RTreeMatcherPerformanceTestCase : public PerformanceTest
+{
+public:
+	vector<int> R;
+
+
+	RTreeMatcherPerformanceTestCase(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, const vector<int>& is)
+		: PerformanceTest(seed, source_set, model_subset_size, match_subset_size, random_masks_set_size, blocks, threads, device_id),
+		  R(is)
+	{
+	}
+
+
+	friend std::ostream& operator<<(std::ostream& os, const RTreeMatcherPerformanceTestCase& obj)
+	{
+		os << static_cast<const PerformanceTest&>(obj) << " {";
+		for (int i = 0; i < obj.R.size(); ++i)
+			os << obj.R[i] << ",";
+		os << " } ";
+
+		return os;
 	}
 };
 
@@ -156,6 +198,9 @@ public:
 	vector<RTreeMatcherTest> RTreeMatcherTests;
 
 	vector<PerformanceTest> PerformanceTests;
+	vector<TreeMatcherPerformanceTestCase> TreeMatcherPerformanceTests;
+	vector<RTreeMatcherPerformanceTestCase> RTreeMatcherPerformanceTests;
+
 	ofstream ResultsFile;
 	ofstream ThreadsFile;
 	int ThreadsFileLines;
@@ -230,14 +275,13 @@ public:
 	void InitPerformanceTests()
 	{
 		vector<int> Seeds = { 2341};
-		vector<int> ModelSetSize = { 400000 };
-		vector<int> MatchSet1Size = { 150000 };
-		vector<int> MatchSet2Size = { 150000 };
+		vector<int> ModelSetSize = { 100000 };
+		vector<int> MatchSet1Size = { 1000000 };
+		vector<int> MatchSet2Size = { 1000000 };
 		vector<int> Blocks = { 1024 };
 		vector<int> Threads = { 1024 };
 		vector<int> Devices = { 0 };
-		vector<bool> UsePresorting = { false, true };
-		vector<bool> UseMidLevels = { false, true };
+		
 
 		for (auto s : Seeds)
 			for (auto b : Blocks)
@@ -246,10 +290,8 @@ public:
 						for (auto modelSS : ModelSetSize)
 							for (auto matchSS : MatchSet1Size)
 								for (auto rndSS : MatchSet2Size)
-									for(auto ps : UsePresorting)
-										for(auto ml : UseMidLevels)
-											for (auto f : Files)
-												PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d, ps, ml));
+									for (auto f : Files)
+										PerformanceTests.push_back(PerformanceTest(s, f, modelSS, matchSS, rndSS, b, t, d));
 
 		ResultsFile.open("TestResults.txt");
 
@@ -257,6 +299,36 @@ public:
 		ThreadsFile.open("ThreadsTimes.txt");
 		ThreadsFileLines = 0;
 #endif
+	}
+
+	void InitTreeMatcherPerformanceTests()
+	{
+		vector<bool> UsePresorting = { false, true };
+		vector<bool> UseMidLevels = { false, true };
+
+		for (auto t : PerformanceTests)
+			for (auto ps : UsePresorting)
+				for (auto ml : UseMidLevels)
+					TreeMatcherPerformanceTests.push_back(TreeMatcherPerformanceTestCase(t.Seed, t.SourceSet, t.ModelSubsetSize, t.MatchSubsetSize, t.RandomMasksSetSize, t.Blocks, t.Threads, t.DeviceID, ps, ml));
+	}
+
+	void InitRTreeMatcherPerformanceTests()
+	{
+		//vector<vector<int>> rs =
+		//{
+		//	{ 8, 8, 8, 8 },
+		//	{ 5, 5, 6, 8, 8 },
+		//	{ 8, 8, 4, 4, 8 },
+		//};
+		vector<vector<int>> rs =
+		{
+			{ 4, 4, 4, 4, 4, 4, 4, 4 },
+			{ 5, 5, 6, 8, 8 },
+		};
+
+		for (auto t : PerformanceTests)
+			for (auto r : rs)
+					RTreeMatcherPerformanceTests.push_back(RTreeMatcherPerformanceTestCase(t.Seed, t.SourceSet, t.ModelSubsetSize, t.MatchSubsetSize, t.RandomMasksSetSize, t.Blocks, t.Threads, t.DeviceID, r));
 	}
 
 	Environment()
@@ -270,6 +342,8 @@ public:
 
 		#ifdef PERF_TEST
 			InitPerformanceTests();
+			InitTreeMatcherPerformanceTests();
+			InitRTreeMatcherPerformanceTests();
 		#endif
 	}
 };

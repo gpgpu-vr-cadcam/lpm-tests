@@ -663,7 +663,7 @@ __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *
 		{
 			nodesToCheck[l] = 0;
 			if (nodesToCheck[l - 1] != 0)
-				nodesToCheck[l] = Children[l - 1][(nodesToCheck[l - 1] - 1)*ChildrenCount[l - 1] + Masks[l - 1][i]];
+				nodesToCheck[l] = Children[l - 1][(nodesToCheck[l - 1] - 1)*ChildrenCount[l - 1] + ips[l - 1][i]];
 			
 		}
 
@@ -701,10 +701,10 @@ RTreeResult RTreeMatcher::Match(IPSet &set)
 
 	int** h_Masks = new int*[Model.L];
 	for (int l = 0; l < Model.L; ++l)
-		GpuAssert(cudaMalloc(reinterpret_cast<void**>(&h_Masks[l]), Model.Count * sizeof(int)), "Cannot init ip masks device memory");
+		GpuAssert(cudaMalloc(reinterpret_cast<void**>(&h_Masks[l]), set.Size * sizeof(int)), "Cannot init ip masks device memory");
 	GpuAssert(cudaMemcpy(d_IPs, h_Masks, Model.L * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy Masks pointers to GPU");
 
-	delete[] h_Masks;
+	
 
 	//Copying ips from IPSet and partitioning them
 	//TODO: Tutaj budowanie d_IPsLenghts jest niepotrzebne
@@ -725,9 +725,12 @@ RTreeResult RTreeMatcher::Match(IPSet &set)
 
 	GpuAssert(cudaMemcpy(result.MatchedMaskIndex, d_Result, result.IpsToMatchCount * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy Result data");
 
+	for (int l = 0; l < Model.L; ++l)
+		GpuAssert(cudaFree(h_Masks[l]), "Cannot free ip masks device memory");
 	GpuAssert(cudaFree(d_Result), "Cannot free Result memory");
 	GpuAssert(cudaFree(d_IPs), "Cannot free d_IPs memory");
 	GpuAssert(cudaFree(d_IPsLenghts), "Cannot free d_IPsLenghts memory");
+	delete[] h_Masks;
 
 	result.MatchingTime = timer.Stop();
 
