@@ -85,7 +85,7 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 
 	//when
 	matcher.BuildModel(modelSet);
-	RTreeResult result = matcher.Match(matchSet);
+	Result result = matcher.Match(matchSet);
 
 	//then
 	//cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;

@@ -1,33 +1,33 @@
-#include "../Matchers/RTreeMatcher.cuh"
+#include "../Matchers/ArrayMatcher.cuh"
 #include "Tests.h"
 #include <gtest/gtest.h>
 
-struct RTreeMatcherBuildModelTest : testing::Test, testing::WithParamInterface<RTreeMatcherTest> {};
-TEST_P(RTreeMatcherBuildModelTest, For)
+struct ArrayMatcherBuildModelTest : testing::Test, testing::WithParamInterface<IPSubsetTest> {};
+TEST_P(ArrayMatcherBuildModelTest, For)
 {
 	//given
-	RTreeMatcherTest testCase = GetParam();
+	IPSubsetTest testCase = GetParam();
 	IPSet set;
 	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	//when
-	RTreeMatcher matcher(testCase.R);
+	ArrayMatcher matcher;
 	matcher.BuildModel(set);
 
 	//then
 	cout << "Model build time:" << matcher.ModelBuildTime << endl;
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperIPSet_When_BuildModelCalled_Then_ModelCreated, RTreeMatcherBuildModelTest, testing::ValuesIn(ENV.RTreeMatcherTests));
+INSTANTIATE_TEST_CASE_P(Given_ProperIPSet_When_BuildModelCalled_Then_ModelCreated, ArrayMatcherBuildModelTest, testing::ValuesIn(ENV.SubsetTests));
 
-struct RTreeMatcherBasicMatchTest : testing::Test, testing::WithParamInterface<RTreeMatcherTest> {};
-TEST_P(RTreeMatcherBasicMatchTest, For)
+struct ArrayMatcherBasicMatchTest : testing::Test, testing::WithParamInterface<IPSubsetTest> {};
+TEST_P(ArrayMatcherBasicMatchTest, For)
 {
 	//given
-	RTreeMatcherTest testCase = GetParam();
+	IPSubsetTest testCase = GetParam();
 	IPSet set;
 	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
-	RTreeMatcher matcher(testCase.R);
+	ArrayMatcher matcher;
 	matcher.BuildModel(set);
 
 	//when
@@ -45,4 +45,4 @@ TEST_P(RTreeMatcherBasicMatchTest, For)
 
 	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcher_When_MatchCalled_Then_IPsMatched, RTreeMatcherBasicMatchTest, testing::ValuesIn(ENV.RTreeMatcherTests));
+INSTANTIATE_TEST_CASE_P(Given_ProperTreeMatcher_When_MatchCalled_Then_IPsMatched, ArrayMatcherBasicMatchTest, testing::ValuesIn(ENV.SubsetTests));

@@ -1,7 +1,7 @@
 
 #include "../Utils/Utils.h"
 #include "../Core/IPSet.cuh"
-#include "../Core/BaseResult.h"
+#include "../Core/Result.cuh"
 
 class RTreeModel
 {
@@ -54,32 +54,6 @@ public:
 	}
 };
 
-class RTreeResult : public BaseResult
-{
-public:
-	int *MatchedMaskIndex;
-	int IpsToMatchCount;
-
-
-	RTreeResult(int ips_to_match_count)
-		: IpsToMatchCount(ips_to_match_count),
-		  MatchedMaskIndex(NULL)
-	{
-	}
-
-	~RTreeResult()
-	{
-		if(MatchedMaskIndex != NULL)
-		{
-			delete[] MatchedMaskIndex;
-			MatchedMaskIndex = NULL;
-		}
-	}
-
-	void PrintResult() override;
-	int CountMatched() override;
-};
-
 class RTreeMatcher
 {
 public:
@@ -96,5 +70,5 @@ public:
 	}
 
 	void BuildModel(IPSet &set);
-	RTreeResult Match(IPSet &set);
+	Result Match(IPSet &set);
 };

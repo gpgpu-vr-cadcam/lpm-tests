@@ -25,6 +25,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\Source\Tests\ArrayMatcherTests.cpp" />
     <ClCompile Include="..\..\..\Source\Tests\IPSetTests.cpp" />
     <ClCompile Include="..\..\..\Source\Tests\RTreeMatcherTests.cpp" />
     <ClCompile Include="..\..\..\Source\Tests\TreeMatcherTests.cpp" />

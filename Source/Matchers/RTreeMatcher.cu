@@ -618,23 +618,6 @@ void RTreeModel::Dispose()
 	}
 }
 
-void RTreeResult::PrintResult()
-{
-}
-
-int RTreeResult::CountMatched()
-{
-	int result = 0;
-
-	for (int i = 0; i < IpsToMatchCount; ++i)
-		if (MatchedMaskIndex[i] != -1)
-			++result;
-		//else
-		//	printf("%d\n", i);
-
-	return result;
-}
-
 void RTreeMatcher::BuildModel(IPSet &set)
 {
 	Setup = set.Setup;
@@ -649,6 +632,7 @@ void RTreeMatcher::BuildModel(IPSet &set)
 __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *result, int **ListsStarts, int **ListsLenghts, int *Lenghts, int L, int *R, int *rPreSums, int *ListItems,
 	int **ips, int Count)
 {
+	//TODO: Wyrównaie
 	extern __shared__ int sharedMem[];
 	int *nodesToCheck = sharedMem + threadIdx.x * L;
 
@@ -684,9 +668,9 @@ __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *
 	}
 }
 
-RTreeResult RTreeMatcher::Match(IPSet &set)
+Result RTreeMatcher::Match(IPSet &set)
 {
-	RTreeResult result(set.Size);
+	Result result(set.Size);
 	result.MatchedMaskIndex = new int[set.Size];
 
 	Timer timer;
