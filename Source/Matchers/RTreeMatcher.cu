@@ -2,6 +2,7 @@
 #include <device_launch_parameters.h>
 
 #include <thrust/scan.h>
+#include <thrust/extrema.h>
 #include <thrust/execution_policy.h>
 
 __global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, int *Lenghts, unsigned char *IPData)
@@ -21,7 +22,7 @@ __global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, int
 		}
 
 		for (int l = 0; l < L; ++l)
-			Masks[l][mask] = (address >> (32 - rSums[l])) & ((2 << R[l] - 1) - 1);
+			Masks[l][mask] = (address >> (32 - rSums[l])) & ((1 << R[l]) - 1);
 
 		mask += blockDim.x * gridDim.x;
 	}
@@ -223,7 +224,7 @@ void RTreeModel::Build(IPSet &set, GpuSetup setup)
 	int** h_Masks = new int*[L];
 	for (int l = 0; l < L; ++l)
 		GpuAssert(cudaMalloc((void**)(&h_Masks[l]), Count * sizeof(int)), "Cannot init ip masks device memory");
-	GpuAssert(cudaMemcpy(Masks, h_Masks, L * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy Masks pointers to GPU");
+	GpuAssert(cudaMemcpy(Masks, h_Masks, L * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy MaxIP pointers to GPU");
 
 	delete[] h_Masks;
 
@@ -406,7 +407,7 @@ void RTreeModel::Build(IPSet &set, GpuSetup setup)
 	}
 
 	//Filling lists start indexes
-	int *totalListItemsPerLevel = new int[L];
+	totalListItemsPerLevel = new int[L];
 	for(int l = 0; l < L; ++l)
 	{
 		thrust::exclusive_scan(thrust::device, h_ListsLenghts[l], h_ListsLenghts[l] + LevelsSizes[l], h_ListsStarts[l]);
@@ -540,8 +541,27 @@ void RTreeModel::Build(IPSet &set, GpuSetup setup)
 	delete[] h_startIndexes;
 	delete[] h_endIndexes;
 
-	delete[] totalListItemsPerLevel;
 	delete[] h_ChildrenCount;
+}
+
+int RTreeModel::GetMinListLenght(int i)
+{
+	int min;
+	int* minP = thrust::min_element(thrust::device, h_ListsLenghts[i],
+		h_ListsLenghts[i] + LevelsSizes[i]);
+	GpuAssert(cudaMemcpy(&min, minP, sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy min value");
+
+	return min;
+}
+
+int RTreeModel::GetMaxListLenght(int i)
+{
+	int max;
+	int* maxP = thrust::max_element(thrust::device, h_ListsLenghts[i],
+		h_ListsLenghts[i] + LevelsSizes[i]);
+	GpuAssert(cudaMemcpy(&max, maxP, sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy max value");
+
+	return max;
 }
 
 void RTreeModel::Dispose()
@@ -549,11 +569,11 @@ void RTreeModel::Dispose()
 	if(Masks != NULL)
 	{
 		int** h_Masks = new int*[L];
-		GpuAssert(cudaMemcpy(h_Masks, Masks, L * sizeof(int*), cudaMemcpyDeviceToHost), "Cannot copy Masks pointers to CPU");
+		GpuAssert(cudaMemcpy(h_Masks, Masks, L * sizeof(int*), cudaMemcpyDeviceToHost), "Cannot copy MaxIP pointers to CPU");
 		for (int i = 0; i < L; ++i)
-			GpuAssert(cudaFree(h_Masks[i]), "Cannot free Masks memory");
+			GpuAssert(cudaFree(h_Masks[i]), "Cannot free MaxIP memory");
 		delete[] h_Masks;
-		GpuAssert(cudaFree(Masks), "Cannot free Masks memory");
+		GpuAssert(cudaFree(Masks), "Cannot free MaxIP memory");
 		Masks = NULL;
 	}
 
@@ -616,6 +636,12 @@ void RTreeModel::Dispose()
 		delete[] h_ListsLenghts;
 		ListsLenghts = h_ListsLenghts = NULL;
 	}
+
+	if(totalListItemsPerLevel != NULL)
+	{
+		delete[] totalListItemsPerLevel;
+		totalListItemsPerLevel = NULL;
+	}
 }
 
 void RTreeMatcher::BuildModel(IPSet &set)
@@ -668,6 +694,7 @@ __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *
 	}
 }
 
+
 Result RTreeMatcher::Match(IPSet &set)
 {
 	Result result(set.Size);
@@ -685,7 +712,7 @@ Result RTreeMatcher::Match(IPSet &set)
 	int** h_Masks = new int*[Model.L];
 	for (int l = 0; l < Model.L; ++l)
 		GpuAssert(cudaMalloc(reinterpret_cast<void**>(&h_Masks[l]), set.Size * sizeof(int)), "Cannot init ip masks device memory");
-	GpuAssert(cudaMemcpy(d_IPs, h_Masks, Model.L * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy Masks pointers to GPU");
+	GpuAssert(cudaMemcpy(d_IPs, h_Masks, Model.L * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy MaxIP pointers to GPU");
 
 	
 

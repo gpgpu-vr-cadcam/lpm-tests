@@ -13,6 +13,8 @@ int main(int argc, char **argv)
 	auto ret = RUN_ALL_TESTS();
 
 	ENV.ResultsFile.close();
+	ENV.ListLenghtsFile.close();
+
 #ifndef NO_THREADS_TRACE
 	ENV.ThreadsFile.close();
 #endif

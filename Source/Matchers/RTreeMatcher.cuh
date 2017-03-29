@@ -19,7 +19,7 @@ public:
 	int L;
 
 	//TODO: Rename pointers to d_
-	//Masks stored in tree structure
+	//MaxIP stored in tree structure
 	int** Masks;
 	int* Lenghts;
 
@@ -33,7 +33,7 @@ public:
 	int** Children;
 	int** h_Children;
 
-	//Lists items (indexes to Masks array)
+	//Lists items (indexes to MaxIP array)
 	int* ListItems;
 
 	//Start indexes of lists (in ListsItems array) of tree nodes
@@ -44,8 +44,13 @@ public:
 	int** ListsLenghts;
 	int** h_ListsLenghts;
 
+	int *totalListItemsPerLevel;
+
 	//Building model
 	void Build(IPSet &set, GpuSetup setup);
+
+	int GetMinListLenght(int level);
+	int GetMaxListLenght(int level);
 
 	void Dispose();
 	~RTreeModel()

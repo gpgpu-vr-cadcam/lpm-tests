@@ -33,7 +33,7 @@ public:
 
 	IPSetTest(const GpuSetup& setup, int masksToLoad)
 		: Setup(setup),
-		  MasksToLoad(masksToLoad) {}
+		MasksToLoad(masksToLoad) {}
 
 
 	friend std::ostream& operator<<(std::ostream& os, const IPSetTest& obj)
@@ -51,7 +51,7 @@ public:
 
 	IPSetLoadTest(const TestFile& file, const GpuSetup& setup, int masksToLoad)
 		: IPSetTest(setup, masksToLoad),
-		  File(file) {}
+		File(file) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const IPSetLoadTest& obj)
 	{
@@ -69,7 +69,7 @@ public:
 
 	IPSubsetTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size)
 		: IPSetLoadTest(file, setup, masksToLoad),
-		  SubsetSize(subset_size) {}
+		SubsetSize(subset_size) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const IPSubsetTest& obj)
 	{
@@ -86,7 +86,7 @@ public:
 
 	RTreeMatcherTest(const TestFile& file, const GpuSetup& setup, int masksToLoad, int subset_size, vector<int> r)
 		: IPSubsetTest(file, setup, masksToLoad, subset_size),
-		  R(r) {}
+		R(r) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const RTreeMatcherTest& obj)
 	{
@@ -113,13 +113,13 @@ public:
 
 	PerformanceTest(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id)
 		: Seed(seed),
-		  SourceSet(source_set),
-		  ModelSubsetSize(model_subset_size),
-		  MatchSubsetSize(match_subset_size),
-		  RandomMasksSetSize(random_masks_set_size),
-		  Blocks(blocks),
-		  Threads(threads),
-		  DeviceID(device_id) {}
+		SourceSet(source_set),
+		ModelSubsetSize(model_subset_size),
+		MatchSubsetSize(match_subset_size),
+		RandomMasksSetSize(random_masks_set_size),
+		Blocks(blocks),
+		Threads(threads),
+		DeviceID(device_id) {}
 
 
 	friend std::ostream& operator<<(std::ostream& os, const PerformanceTest& obj)
@@ -146,8 +146,8 @@ public:
 public:
 	TreeMatcherPerformanceTestCase(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, bool use_presorting, bool use_mid_levels)
 		: PerformanceTest(seed, source_set, model_subset_size, match_subset_size, random_masks_set_size, blocks, threads, device_id),
-		  UsePresorting(use_presorting),
-		  UseMidLevels(use_mid_levels)
+		UsePresorting(use_presorting),
+		UseMidLevels(use_mid_levels)
 	{
 	}
 
@@ -169,7 +169,7 @@ public:
 
 	RTreeMatcherPerformanceTestCase(int seed, const TestFile& source_set, int model_subset_size, int match_subset_size, int random_masks_set_size, int blocks, int threads, int device_id, const vector<int>& is)
 		: PerformanceTest(seed, source_set, model_subset_size, match_subset_size, random_masks_set_size, blocks, threads, device_id),
-		  R(is)
+		R(is)
 	{
 	}
 
@@ -179,6 +179,34 @@ public:
 		for (int i = 0; i < obj.R.size(); ++i)
 			os << obj.R[i] << ",";
 		os << " } ";
+
+		return os;
+	}
+};
+
+class RTreeListsLenghtsTestCase
+{
+public:
+	TestFile File;
+	vector<int> R;
+	int Blocks;
+	int Threads;
+
+
+	RTreeListsLenghtsTestCase(const TestFile& file, const vector<int>& is, int blocks, int threads)
+		: File(file),
+		R(is),
+		Blocks(blocks),
+		Threads(threads) {}
+
+
+	friend std::ostream& operator<<(std::ostream& os, const RTreeListsLenghtsTestCase& obj)
+	{
+		os << "File: " << obj.File << " {";
+		for (int i = 0; i < obj.R.size(); ++i)
+			os << obj.R[i] << ",";
+		os << " } ";
+		os << " Blocks: " << obj.Blocks << " Threads: " << obj.Threads;
 
 		return os;
 	}
@@ -200,8 +228,12 @@ public:
 	vector<TreeMatcherPerformanceTestCase> TreeMatcherPerformanceTests;
 	vector<RTreeMatcherPerformanceTestCase> RTreeMatcherPerformanceTests;
 
+	vector<RTreeListsLenghtsTestCase> RTreeListsLenghtsTests;
+
 	ofstream ResultsFile;
 	ofstream ThreadsFile;
+	ofstream ListLenghtsFile;
+
 	int ThreadsFileLines;
 
 	void InitFiles()
@@ -243,7 +275,7 @@ public:
 	void InitIPSetTests()
 	{
 		for (auto f : Files)
-			for(auto t : IPSetTests)
+			for (auto t : IPSetTests)
 				IPSetLoadTests.push_back(IPSetLoadTest(f, t.Setup, t.MasksToLoad));
 	}
 
@@ -258,13 +290,13 @@ public:
 
 	void InitRTreeMatcherTests()
 	{
-		vector<vector<int>> rs = 
-			{ 
-				{ 8, 8, 8, 8 },
-				{ 8, 8, 16 },
-				{ 5, 5, 6, 8, 8},
-				{ 4, 5, 4, 5, 6, 4, 2 },
-			};
+		vector<vector<int>> rs =
+		{
+			{ 8, 8, 8, 8 },
+			{ 8, 8, 16 },
+			{ 5, 5, 6, 8, 8},
+			{ 4, 5, 4, 5, 6, 4, 2 },
+		};
 
 		for (auto t : SubsetTests)
 			for (auto r : rs)
@@ -273,14 +305,14 @@ public:
 
 	void InitPerformanceTests()
 	{
-		vector<int> Seeds = { 2341};
-		vector<int> ModelSetSize = {  400000 };
-		vector<int> MatchSet1Size = {  1000000 };
-		vector<int> MatchSet2Size = {  1000000 };
+		vector<int> Seeds = { 2341 };
+		vector<int> ModelSetSize = { 400000 };
+		vector<int> MatchSet1Size = { 1000000 };
+		vector<int> MatchSet2Size = { 1000000 };
 		vector<int> Blocks = { 1024 };
 		vector<int> Threads = { 1024 };
 		vector<int> Devices = { 0 };
-		
+
 
 		for (auto s : Seeds)
 			for (auto b : Blocks)
@@ -313,12 +345,6 @@ public:
 
 	void InitRTreeMatcherPerformanceTests()
 	{
-		//vector<vector<int>> rs =
-		//{
-		//	{ 8, 8, 8, 8 },
-		//	{ 5, 5, 6, 8, 8 },
-		//	{ 8, 8, 4, 4, 8 },
-		//};
 		vector<vector<int>> rs =
 		{
 			{ 16, 8, 8},
@@ -327,7 +353,35 @@ public:
 
 		for (auto t : PerformanceTests)
 			for (auto r : rs)
-					RTreeMatcherPerformanceTests.push_back(RTreeMatcherPerformanceTestCase(t.Seed, t.SourceSet, t.ModelSubsetSize, t.MatchSubsetSize, t.RandomMasksSetSize, t.Blocks, t.Threads, t.DeviceID, r));
+				RTreeMatcherPerformanceTests.push_back(RTreeMatcherPerformanceTestCase(t.Seed, t.SourceSet, t.ModelSubsetSize, t.MatchSubsetSize, t.RandomMasksSetSize, t.Blocks, t.Threads, t.DeviceID, r));
+	}
+
+	void InitRTreeListLenghtsTests()
+	{
+		vector<vector<int>> rs =
+		{
+			{ 8, 8, 8, 8 },
+			{ 5, 5, 6, 8, 8 },
+			{ 8, 8, 4, 4, 8 },
+			{ 4, 4, 4, 4, 4, 4, 4, 4 },
+			{ 8, 4, 4, 4, 4, 8 },
+			{ 16, 8, 8 },
+			{ 8, 8, 4, 4, 4, 4 },
+			{ 4, 4, 4, 4, 8, 8 },
+			{ 8, 16, 8}
+		};
+
+		vector<int> threads = { 32, 64, 128, 256, 512, 1024 };
+		vector<int> blocks = { 32, 64, 128, 256, 512, 1024 };
+
+		for (auto f : Files)
+			for (auto r : rs)
+				for (auto t : threads)
+					for (auto b : blocks)
+						RTreeListsLenghtsTests.push_back(RTreeListsLenghtsTestCase(f, r, b, t));
+
+		ListLenghtsFile.open("ListsLenghts.txt");
+
 	}
 
 	Environment()
@@ -339,11 +393,12 @@ public:
 		InitSubsetTests();
 		InitRTreeMatcherTests();
 
-		#ifdef PERF_TEST
-			InitPerformanceTests();
-			InitTreeMatcherPerformanceTests();
-			InitRTreeMatcherPerformanceTests();
-		#endif
+#ifdef PERF_TEST
+		InitPerformanceTests();
+		InitTreeMatcherPerformanceTests();
+		InitRTreeMatcherPerformanceTests();
+		InitRTreeListLenghtsTests();
+#endif
 	}
 };
 

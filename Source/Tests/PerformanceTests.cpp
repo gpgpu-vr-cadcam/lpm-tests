@@ -88,7 +88,7 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 	Result result = matcher.Match(matchSet);
 
 	//then
-	//cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
+	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
 
 	ENV.ResultsFile << testCase.Seed << ";" << testCase.SourceSet.FileName << ";" << testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";" 
 		<< testCase.Blocks << ";" << testCase.Threads << ";" << testCase.DeviceID << ";" << "{";
@@ -97,4 +97,47 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 	ENV.ResultsFile << "}" << ";" << matcher.ModelBuildTime << ";" << result.MatchingTime << endl;
 
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+//INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+
+struct RTreeMatcherListsLenghtsTest : testing::Test, testing::WithParamInterface<RTreeListsLenghtsTestCase> {};
+TEST_P(RTreeMatcherListsLenghtsTest, For)
+{
+	//given
+	RTreeListsLenghtsTestCase testCase = GetParam();
+
+	GpuSetup setup(testCase.Blocks, testCase.Threads, 0);
+
+	IPSet modelSet;
+	modelSet.Load(setup, ENV.TestDataPath + testCase.File.FileName, testCase.File.Size);
+	RTreeMatcher matcher(testCase.R);
+
+	srand(1234);
+	IPSet matchSet1 = modelSet.RandomSubset(200000);
+	srand(1234);
+	IPSet matchSet2;
+	matchSet2.Generate(setup, 200000);
+
+	//when
+	matcher.BuildModel(modelSet);
+	auto result1 = matcher.Match(modelSet);
+	auto result2 = matcher.Match(matchSet1);
+	auto result3 = matcher.Match(matchSet2);
+	
+	ENV.ListLenghtsFile << testCase.File.FileName << ";" << testCase.File.Size << ";" << setup.Blocks << ";" << setup.Threads << ";" << matcher.Model.L << ";" << "{";
+	for (int i = 0; i < testCase.R.size(); ++i)
+		ENV.ListLenghtsFile << testCase.R[i] << ";";
+	ENV.ListLenghtsFile << "}" << ";" << matcher.ModelBuildTime << ";";
+	ENV.ListLenghtsFile << result1.MatchingTime << ";";
+	ENV.ListLenghtsFile << result2.MatchingTime << ";";
+	ENV.ListLenghtsFile << result3.MatchingTime << ";";
+
+
+	for(int i = 0; i < matcher.Model.L; ++i)
+	{
+		ENV.ListLenghtsFile << "{" << matcher.Model.GetMinListLenght(i) << ";" << matcher.Model.GetMaxListLenght(i) << ";" << matcher.Model.totalListItemsPerLevel[i] / matcher.Model.LevelsSizes[i] << ";" << matcher.Model.LevelsSizes[i] << "};";
+	}
+
+	ENV.ListLenghtsFile << endl;
+
+}
+INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherListsLenghtsTest, testing::ValuesIn(ENV.RTreeListsLenghtsTests));

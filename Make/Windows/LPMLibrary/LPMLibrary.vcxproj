@@ -195,8 +195,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_52,sm_52</CodeGeneration>
+      <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
+      <CodeGeneration>compute_61,sm_61</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
