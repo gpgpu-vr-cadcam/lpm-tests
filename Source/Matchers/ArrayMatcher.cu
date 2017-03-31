@@ -3,6 +3,8 @@
 #include <device_launch_parameters.h>
 #include <thrust/extrema.h>
 
+#define MASK8  ((1 << 8)-1)
+
 __global__ void BuildIPsList(int Count, unsigned int* MaxIP, unsigned int *MinIP,  int *Lenghts, unsigned char *IPData)
 {
 	int mask = blockIdx.x * blockDim.x + threadIdx.x;
@@ -26,41 +28,31 @@ __global__ void BuildIPsList(int Count, unsigned int* MaxIP, unsigned int *MinIP
 	}
 }
 
-__global__ void FillArray(int *Array, int ArraySize, unsigned int *MaxIP, unsigned int *MinIP,  int *Lenghts, unsigned int *indexes, int MaxLenght, int MinLenght, int Count)
+__global__ void FillArray(uchar3 *Array, int ArraySize, unsigned int *MaxIP, unsigned int *MinIP,  int *Lenghts, unsigned int *indexes, int MaxLenght, int MinLenght, int Count, int maskLenght)
 {
-	unsigned int firstIndex = (ArraySize / gridDim.x) * blockIdx.x;
-	unsigned int lastIndex = ((ArraySize / gridDim.x) * (blockIdx.x + 1)) - 1;
-
-	for(unsigned int lenght = MaxLenght; lenght >= MinLenght; --lenght)
+	int entry = blockIdx.x;
+	while(entry < Count)
 	{
-		for(int entry = 0; entry < Count; ++entry)
+		if(Lenghts[entry] == maskLenght)
 		{
-			if(Lenghts[entry] == lenght)
+			unsigned int start = MinIP[entry];
+			start = (start >> (32 - MaxLenght)) & ((1 << MaxLenght) - 1);
+
+			unsigned int end = MaxIP[entry];
+			end = (end >> (32 - MaxLenght)) & ((1 << MaxLenght) - 1);
+
+			unsigned int index = start + threadIdx.x;
+			while (index <= end)
 			{
-				unsigned int start = MinIP[entry];
-				start = (start >> (32 - MaxLenght)) & ((1 << MaxLenght) - 1);
-
-				if (start < firstIndex)
-					start = firstIndex;
-
-				unsigned int end = MaxIP[entry];
-				end = (end >> (32 - MaxLenght)) & ((1 << MaxLenght) - 1);
-
-				if (end > lastIndex)
-					end = lastIndex;
-
-				unsigned int index = start + threadIdx.x;
-				while (index <= end)
-				{
-					Array[index] = indexes[entry];
-					index += blockDim.x;
-				}
+				Array[index].x = (indexes[entry] >> 16) & MASK8;
+				Array[index].y = (indexes[entry] >> 8) & MASK8;
+				Array[index].z = indexes[entry] & MASK8;
+				index += blockDim.x;
 			}
 		}
 
-		__syncthreads();
+		entry += gridDim.x;
 	}
-	
 }
 
 void ArrayMatcher::BuildModel(IPSet& set)
@@ -88,47 +80,21 @@ void ArrayMatcher::BuildModel(IPSet& set)
 	GpuAssert(cudaMemcpy(&MinLenght, minLenghtPointer, sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy min lenght");
 
 	ArraySize = (1 << MaxLenght);
-	GpuAssert(cudaMalloc((void**)&Array, ArraySize * sizeof(int)), "Cannot allocate Array memory");
-	thrust::fill_n(thrust::device, Array, ArraySize, -1);
+	GpuAssert(cudaMalloc((void**)&Array, ArraySize * sizeof(uchar3)), "Cannot allocate Array memory");
+	thrust::fill_n(thrust::device, Array, ArraySize, EMPTY);
 
 	unsigned int *indexes;
 	GpuAssert(cudaMalloc((void**)&indexes, set.Size * sizeof(unsigned int)), "Cannot allocate indexes memory");
 	thrust::sequence(thrust::device, indexes, indexes + set.Size);
 
-	FillArray << <Setup.Blocks, Setup.Threads >> > (Array, ArraySize, MaxIP, MinIP, Lenghts, indexes, MaxLenght, MinLenght, set.Size);
-	GpuAssert(cudaGetLastError(), "Error while launching FillArray kernel");
-	GpuAssert(cudaDeviceSynchronize(), "Error while running FillArray kernel");
+	for(int i = MaxLenght; i >= MinLenght; --i)
+	{
+		FillArray << <Setup.Blocks, Setup.Threads >> > (Array, ArraySize, MaxIP, MinIP, Lenghts, indexes, MaxLenght, MinLenght, set.Size, i);
+		GpuAssert(cudaGetLastError(), "Error while launching FillArray kernel");
+		GpuAssert(cudaDeviceSynchronize(), "Error while running FillArray kernel");
+	}
 
 	//cleanup
-	//unsigned int *maxIP = new unsigned int[set.Size];
-	//unsigned int *minIP = new unsigned int[set.Size];
-	//int *len = new int[set.Size];
-	//cudaMemcpy(maxIP, MaxIP, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-	//cudaMemcpy(minIP, MinIP, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-	//cudaMemcpy(len, Lenghts, set.Size * sizeof(int), cudaMemcpyDeviceToHost);
-
-	//for (int i = 0; i < set.Size; ++i)
-	//	cout << maxIP[i] << "  " << minIP[i] << "   " << len[i] << endl;
-
-	//delete[] minIP;
-	//delete[] maxIP;
-	//delete[] len;
-
-	//int *a = new int[ArraySize];
-	//int c = 0;
-	//cudaMemcpy(a, Array, ArraySize * sizeof(int), cudaMemcpyDeviceToHost);
-
-	//for (int i = 0; i < ArraySize; ++i)
-	//{
-	//	if (a[i] != -1)
-	//	{
-	//		//cout << a[i] << "  " << i << endl;
-	//		++c;
-	//	}
-	//}
-	//delete[] a;
-	//cout << "Counter:   " << c << endl;
-
 	GpuAssert(cudaFree(indexes), "Cannot free indexes memory");
 	GpuAssert(cudaFree(MaxIP), "Cannot free MaxIP memory");
 	GpuAssert(cudaFree(MinIP), "Cannot free MinIP memory");
@@ -138,7 +104,7 @@ void ArrayMatcher::BuildModel(IPSet& set)
 	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
 }
 
-__global__ void MatchWithArray(int *Array, int Count, unsigned char *ips, int *result, int MaxLenght)
+__global__ void MatchWithArray(uchar3 *Array, int Count, unsigned char *ips, int *result, int MaxLenght)
 {
 	int ip = blockIdx.x * blockDim.x + threadIdx.x;
 	int address, part;
@@ -153,7 +119,13 @@ __global__ void MatchWithArray(int *Array, int Count, unsigned char *ips, int *r
 
 		address = (address >> (32 - MaxLenght)) & ((1 << MaxLenght)-1);
 
-		result[ip] = Array[address];
+		if (Array[address].x != MASK8 || Array[address].y != MASK8 || Array[address].z != MASK8)
+		{
+			result[ip] = 0;
+			result[ip] = result[ip] | ((unsigned int)Array[address].x) << 16;
+			result[ip] = result[ip] | ((unsigned int)Array[address].y) << 8;
+			result[ip] = result[ip] | ((unsigned int)Array[address].z);
+		}
 
 		ip += gridDim.x * blockDim.x;
 	}

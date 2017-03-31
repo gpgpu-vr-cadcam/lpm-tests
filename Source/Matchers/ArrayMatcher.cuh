@@ -5,10 +5,12 @@
 class ArrayMatcher
 {
 public:
+	uchar3 EMPTY;
+
 	GpuSetup Setup;
 	float ModelBuildTime;
 
-	int *Array;	//TODO: Zamiana Array na uchar3 w celu oszczêdnoœci pamiêci
+	uchar3 *Array;
 
 	int MaxLenght;
 	int MinLenght;
@@ -18,6 +20,7 @@ public:
 		: ModelBuildTime(0)
 	{
 		Array = NULL;
+		EMPTY.x = EMPTY.y = EMPTY.z = ~0;
 	}
 
 	~ArrayMatcher()
