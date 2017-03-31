@@ -1,3 +1,4 @@
+#pragma once
 #include "BaseResult.h"
 
 class Result : public BaseResult

@@ -1,6 +1,7 @@
 #include "Tests.h"
 #include "../Matchers/TreeMatcher.cuh"
 #include "../Matchers/RTreeMatcher.cuh"
+#include "../Matchers/ArrayMatcher.cuh"
 #include <gtest/gtest.h>
 
 struct TreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<TreeMatcherPerformanceTestCase> {};
@@ -98,6 +99,39 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 
 }
 //INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+
+struct ArrayMatcherPerformanceTest : testing::Test, testing::WithParamInterface<PerformanceTest> {};
+TEST_P(ArrayMatcherPerformanceTest, For)
+{
+	//given
+	PerformanceTest testCase = GetParam();
+
+	srand(testCase.Seed);
+	GpuSetup setup(testCase.Blocks, testCase.Threads, testCase.DeviceID);
+
+	IPSet modelSet;
+	modelSet.Load(setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.ModelSubsetSize);
+
+	IPSet matchSet1 = modelSet.RandomSubset(testCase.MatchSubsetSize);
+	IPSet matchSet2;
+	matchSet2.Generate(setup, testCase.RandomMasksSetSize);
+	IPSet matchSet = matchSet1 + matchSet2;
+
+	ArrayMatcher matcher;
+
+	//when
+	matcher.BuildModel(modelSet);
+	Result result = matcher.Match(matchSet);
+
+	//then
+	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
+
+	ENV.ResultsFile << testCase.Seed << ";" << testCase.SourceSet.FileName << ";" << testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
+		<< testCase.Blocks << ";" << testCase.Threads << ";" << testCase.DeviceID << ";";
+	ENV.ResultsFile << ";" << matcher.ModelBuildTime << ";" << result.MatchingTime << endl;
+
+}
+INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
 
 struct RTreeMatcherListsLenghtsTest : testing::Test, testing::WithParamInterface<RTreeListsLenghtsTestCase> {};
 TEST_P(RTreeMatcherListsLenghtsTest, For)

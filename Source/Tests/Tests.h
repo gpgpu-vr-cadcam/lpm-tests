@@ -318,8 +318,8 @@ public:
 	{
 		vector<int> Seeds = { 2341 };
 		vector<int> ModelSetSize = { 400000 };
-		vector<int> MatchSet1Size = { 1000000 };
-		vector<int> MatchSet2Size = { 1000000 };
+		vector<int> MatchSet1Size = { 10000 };
+		vector<int> MatchSet2Size = { 10000 };
 		vector<int> Blocks = { 1024 };
 		vector<int> Threads = { 1024 };
 		vector<int> Devices = { 0 };
