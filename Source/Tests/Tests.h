@@ -238,16 +238,27 @@ public:
 
 	void InitFiles()
 	{
-		Files.push_back(TestFile("data-raw-table_australia_012016.txt", 565949));
-		Files.push_back(TestFile("data-raw-table_australia_092016.txt", 420206));
-		Files.push_back(TestFile("data-raw-table_honkkong_012016.txt", 565907));
-		Files.push_back(TestFile("data-raw-table_honkkong_092016.txt", 602812));
-		Files.push_back(TestFile("data-raw-table_london_012016.txt", 564426));
-		Files.push_back(TestFile("data-raw-table_london_092016.txt", 601489));
-		Files.push_back(TestFile("data-raw-table_tokyo_012016.txt", 576846));
-		Files.push_back(TestFile("data-raw-table_tokyo_092016.txt", 611460));
-		Files.push_back(TestFile("data-raw-table_usa_012016.txt", 561755));
-		Files.push_back(TestFile("data-raw-table_usa_092016.txt", 598473));
+		//Files.push_back(TestFile("data-raw-table_australia_012016.txt", 565949));
+		//Files.push_back(TestFile("data-raw-table_australia_092016.txt", 420206));
+		//Files.push_back(TestFile("data-raw-table_honkkong_012016.txt", 565907));
+		//Files.push_back(TestFile("data-raw-table_honkkong_092016.txt", 602812));
+		//Files.push_back(TestFile("data-raw-table_london_012016.txt", 564426));
+		//Files.push_back(TestFile("data-raw-table_london_092016.txt", 601489));
+		//Files.push_back(TestFile("data-raw-table_tokyo_012016.txt", 576846));
+		//Files.push_back(TestFile("data-raw-table_tokyo_092016.txt", 611460));
+		//Files.push_back(TestFile("data-raw-table_usa_012016.txt", 561755));
+		//Files.push_back(TestFile("data-raw-table_usa_092016.txt", 598473));
+
+		Files.push_back(TestFile("data-raw-table_australia_012016_short_masks.txt", 565726));
+		Files.push_back(TestFile("data-raw-table_australia_092016_short_masks.txt", 420098));
+		Files.push_back(TestFile("data-raw-table_honkkong_012016_short_masks.txt", 565470));
+		Files.push_back(TestFile("data-raw-table_honkkong_092016_short_masks.txt", 602206));
+		Files.push_back(TestFile("data-raw-table_london_012016_short_masks.txt", 563495));
+		Files.push_back(TestFile("data-raw-table_london_092016_short_masks.txt", 600444));
+		Files.push_back(TestFile("data-raw-table_tokyo_012016_short_masks.txt", 575282));
+		Files.push_back(TestFile("data-raw-table_tokyo_092016_short_masks.txt", 610033));
+		Files.push_back(TestFile("data-raw-table_usa_012016_short_masks.txt", 561519));
+		Files.push_back(TestFile("data-raw-table_usa_092016_short_masks.txt", 598235));
 	}
 
 	void InitGenerateSetups()
