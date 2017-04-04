@@ -7,8 +7,6 @@
 
 #include <thrust/random.h>
 #include <thrust/device_vector.h>
-#include <thrust/transform.h>
-#include <thrust/iterator/counting_iterator.h>
 #include <iostream>
 
 using namespace std;
@@ -23,7 +21,6 @@ inline void GpuAssert(cudaError_t code, const char *msg)
 		cerr << m << "   Error code:" << code << endl;
 		throw runtime_error(m.c_str());
 	}
-		
 }
 
 class GpuSetup
@@ -33,32 +30,20 @@ public:
 	int Threads;
 	int DeviceID;
 
-
 	GpuSetup()
-		: Blocks(-1),
-		Threads(-1),
-		DeviceID(-1) {}
+		: Blocks(-1), Threads(-1), DeviceID(-1) {}
 
 	GpuSetup(int blocks, int threads, int deviceID)
-		: Blocks(blocks),
-		  Threads(threads),
-		  DeviceID(deviceID) {}
+		: Blocks(blocks), Threads(threads), DeviceID(deviceID) {}
 
 	friend ostream& operator<<(ostream& os, const GpuSetup& obj)
 	{
-		return os
-			<< "Blocks: " << obj.Blocks
-			<< " Threads: " << obj.Threads
-			<< " DeviceID: " << obj.DeviceID;
+		return os << obj.Blocks << ";" << obj.Threads << ";" << obj.DeviceID << ";";
 	}
 
 
 	GpuSetup(const GpuSetup& other)
-		: Blocks(other.Blocks),
-		  Threads(other.Threads),
-		  DeviceID(other.DeviceID)
-	{
-	}
+		: Blocks(other.Blocks), Threads(other.Threads), DeviceID(other.DeviceID) {}
 
 	GpuSetup& operator=(const GpuSetup& other)
 	{

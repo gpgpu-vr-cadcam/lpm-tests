@@ -25,6 +25,8 @@
     <ClInclude Include="..\..\..\Source\Matchers\ArrayMatcher.cuh" />
     <ClInclude Include="..\..\..\Source\Matchers\RTreeMatcher.cuh" />
     <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh" />
+    <ClInclude Include="..\..\..\Source\Tests\PerformanceTests.h" />
+    <ClInclude Include="..\..\..\Source\Tests\TestEnv.h" />
     <ClInclude Include="..\..\..\Source\Tests\Tests.h" />
     <ClInclude Include="..\..\..\Source\Utils\Utils.h" />
   </ItemGroup>

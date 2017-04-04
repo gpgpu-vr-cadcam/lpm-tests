@@ -39,6 +39,12 @@
     <ClInclude Include="..\..\..\Source\Matchers\ArrayMatcher.cuh">
       <Filter>Matchers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\Source\Tests\PerformanceTests.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Tests\TestEnv.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\Utils\Utils.cpp">

@@ -5,43 +5,26 @@
 class ArrayMatcher
 {
 public:
+	uchar3 EMPTY;
+
 	GpuSetup Setup;
 	float ModelBuildTime;
 
-	int *MaxIP;
-	int *MinIP;
-	int *Lenghts;
-	int *Array;
+	uchar3 *Array;
+
+	int MaxLenght;
+	int MinLenght;
+	int ArraySize;
 
 	ArrayMatcher()
 		: ModelBuildTime(0)
 	{
-		MaxIP = NULL;
-		MinIP = NULL;
 		Array = NULL;
-		Lenghts = NULL;
+		EMPTY.x = EMPTY.y = EMPTY.z = ~0;
 	}
 
 	~ArrayMatcher()
 	{
-		if(MaxIP != NULL)
-		{
-			GpuAssert(cudaFree(MaxIP), "Cannot free MaxIP memory");
-			MaxIP = NULL;
-		}
-
-		if (MinIP != NULL)
-		{
-			GpuAssert(cudaFree(MaxIP), "Cannot free MinIP memory");
-			MinIP = NULL;
-		}
-
-		if(Lenghts != NULL)
-		{
-			GpuAssert(cudaFree(Lenghts), "Cannot free Lenghts memory");
-			Lenghts = NULL;
-		}
-
 		if (Array != NULL)
 		{
 			GpuAssert(cudaFree(Array), "Cannot free Array memory");
