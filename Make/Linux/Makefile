@@ -11,7 +11,7 @@ NVCC_FLAGS=-rdc=true -cudart static -lcudart -gencode arch=compute_60,code=sm_60
 GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
 
 UTILS=$(BIN)/Tmp/Utils.o
-CORE=$(BIN)/Tmp/IPSet.o
+CORE=$(BIN)/Tmp/IPSet.o $(BIN)/Tmp/Result.o
 MATCHERS=$(BIN)/Tmp/TreeMatcher.o $(BIN)/Tmp/RTreeMatcher.o
 LIB=$(CORE) $(UTILS) $(MATCHERS)
 
@@ -61,6 +61,9 @@ $(BIN)/Tmp/RTreeMatcher.o: $(SOURCE)/Matchers/RTreeMatcher.cu $(SOURCE)/Matchers
 
 $(BIN)/Tmp/TreeMatcher.o: $(SOURCE)/Matchers/TreeMatcher.cu $(SOURCE)/Matchers/TreeMatcher.cuh $(SOURCE)/Core/BaseResult.h
 	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Matchers/TreeMatcher.cu -o $(BIN)/Tmp/TreeMatcher.o
+
+$(BIN)/Tmp/Result.o: $(SOURCE)/Core/Result.cu $(SOURCE)/Core/Result.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Core/Result.cu -o $(BIN)/Tmp/Result.o
 
 $(BIN)/Tmp/IPSet.o: $(SOURCE)/Core/IPSet.cu $(SOURCE)/Core/IPSet.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Core/IPSet.cu -o $(BIN)/Tmp/IPSet.o
