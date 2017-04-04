@@ -1,6 +1,6 @@
 
 #include <gtest/gtest.h>
-#include "Tests.h"
+#include "TestEnv.h"
 
 Environment ENV;
 
@@ -12,8 +12,9 @@ int main(int argc, char **argv)
 	::testing::InitGoogleTest(&argc, argv);
 	auto ret = RUN_ALL_TESTS();
 
-	ENV.ResultsFile.close();
-	ENV.ListLenghtsFile.close();
+	ENV.ArrayResultsFile.close();
+	ENV.TreeResultsFile.close();
+	ENV.RTreeResultsFile.close();
 
 #ifndef NO_THREADS_TRACE
 	ENV.ThreadsFile.close();

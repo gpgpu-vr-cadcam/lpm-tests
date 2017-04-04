@@ -42,28 +42,26 @@ struct vector_less
 	}
 }; // end vector less
 
-struct my_sort_functor
+struct sortFunctor
 {
-	int cols;
-	unsigned char *my_list;
-	my_sort_functor(int _col, unsigned char * _lst) : cols(_col), my_list(_lst) {};
+	int *lenghts;
+	unsigned int *ips;
+
+	sortFunctor(int* lenghts, unsigned* ips)
+		: lenghts(lenghts),
+		  ips(ips){}
 
 	__host__ __device__
 		bool operator()(const int idx1, const int idx2) const
 	{
-		bool flip = false;
-		if (my_list[(idx1*cols) + 4] == my_list[(idx2*cols) + 4])
+		if (lenghts[idx1] == lenghts[idx2])
 		{
-			for (int col_idx = 0; col_idx < cols - 1; col_idx++) {
-				unsigned char d1 = my_list[(idx1*cols) + col_idx];
-				unsigned char d2 = my_list[(idx2*cols) + col_idx];
-				if (d1 > d2) break;
-				if (d1 < d2) { flip = true; break; }
-			}
-			return flip;
+			unsigned int d1 = ips[idx1];
+			unsigned int d2 = ips[idx2];
+			return d1 < d2;
 		}
 		else
-			return my_list[(idx1*cols) + 4] < my_list[(idx2*cols) + 4];
+			return lenghts[idx1] < lenghts[idx2];
 	}
 };
 
@@ -248,7 +246,7 @@ __global__ void GetPrefixesRanges(char* dev_sorted_subnets_bits, int * dev_prefi
 		dev_prefixes_end[dev_sorted_subnets_bits[thread * 33 + 32] - 1] = thread;
 }
 
-__global__ void PrepareSortedSubnetsBitsList(unsigned char * dev_subnets, char * dev_sorted_subnets_bits, unsigned int * dev_subnets_indx, int size)
+__global__ void PrepareSortedSubnetsBitsList(unsigned int * dev_subnets, int *lenghts, char * dev_sorted_subnets_bits, unsigned int * dev_subnets_indx, int size)
 {
 	int thread = threadIdx.x + blockIdx.x * blockDim.x;
 	if (thread < size)
@@ -259,7 +257,9 @@ __global__ void PrepareSortedSubnetsBitsList(unsigned char * dev_subnets, char *
 
 		for (int j = 0; j < 4; j++)
 		{
-			curr_byte = dev_subnets[dev_subnets_indx[thread] * 5 + j];
+			//curr_byte = dev_subnets[dev_subnets_indx[thread] * 5 + j];
+			curr_byte = (dev_subnets[dev_subnets_indx[thread]] >> (8 * (3 - j))) & ((1 << 8) - 1);
+
 			for (int i = 0; i < 8; i++)
 			{
 				res = curr_byte & maskValues[i];
@@ -269,7 +269,7 @@ __global__ void PrepareSortedSubnetsBitsList(unsigned char * dev_subnets, char *
 					dev_sorted_subnets_bits[thread * 33 + j * 8 + i] = 0;
 			}
 		}
-		dev_sorted_subnets_bits[thread * 33 + 32] = dev_subnets[dev_subnets_indx[thread] * 5 + 4];
+		dev_sorted_subnets_bits[thread * 33 + 32] = lenghts[dev_subnets_indx[thread]];
 	}
 }
 
@@ -758,12 +758,12 @@ void TreeMatcher::BuildModel(IPSet set)
 		throw runtime_error("Cannot build model for set bigger then MaxSetSize");
 
 	Setup = set.Setup;
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
 	Timer timer;
 	timer.Start();
 
 	Tree.Setup = Setup;
 	Tree.Size = set.Size;
+	Tree.Disposed = false;
 
 	// Host Variables:
 	char * sortedSubnetsBits = nullptr;
@@ -838,9 +838,9 @@ void TreeMatcher::BuildModel(IPSet set)
 
 	// Sorting Subnets
 	dev_subnets_indx_ptr = thrust::device_pointer_cast(Tree.d_SubnetsIndx);
-	thrust::sort(dev_subnets_indx_ptr, dev_subnets_indx_ptr + set.Size, my_sort_functor(5, thrust::raw_pointer_cast(set.d_IPData)));
+	thrust::sort(dev_subnets_indx_ptr, dev_subnets_indx_ptr + set.Size, sortFunctor(set.d_Lenghts, set.d_IPs));
 
-	PrepareSortedSubnetsBitsList << <resetBlocks, resetThreads >> >(set.d_IPData, Tree.d_SortedSubnetBits, Tree.d_SubnetsIndx, set.Size);
+	PrepareSortedSubnetsBitsList << <resetBlocks, resetThreads >> >(set.d_IPs, set.d_Lenghts, Tree.d_SortedSubnetBits, Tree.d_SubnetsIndx, set.Size);
 	GpuAssert(cudaGetLastError(), "Error while launching PrepareSortedSubnetsBitsList kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareSortedSubnetsBitsList kernel");
 
@@ -937,7 +937,6 @@ void TreeMatcher::BuildModel(IPSet set)
 	delete [] prefixesEnd;
 
 	ModelBuildTime = timer.Stop();
-	GpuAssert(cudaSetDevice(0), "Cannot reset device.");
 }
 
 __global__ void PrepareIPList(unsigned char * ipData, unsigned int * ipList, int size)
@@ -962,7 +961,6 @@ TreeResult TreeMatcher::Match(IPSet set)
 	if (set.Size > MaxSetSize)
 		throw runtime_error("Cannot match ip's for set bigger then MaxSetSize");
 
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
 	Timer timer;
 
 	TreeResult result;
@@ -976,13 +974,6 @@ TreeResult TreeMatcher::Match(IPSet set)
 		if (set.Size % Setup.Threads)
 			blocks++;
 	}
-
-	unsigned int * d_IPList;
-	GpuAssert(cudaMalloc((void**)&d_IPList, set.Size * sizeof(unsigned int)), "Cannot allocate memory for d_IPList");
-
-	PrepareIPList << <blocks, threads >> > (set.d_IPData, d_IPList, set.Size);
-	GpuAssert(cudaGetLastError(), "Error while launching PrepareIPList");
-	GpuAssert(cudaDeviceSynchronize(), "Error while running PrepareIPList");
 
 	int * d_MatchedIndexes;
 	GpuAssert(cudaMalloc((void**)&d_MatchedIndexes, set.Size * sizeof(int)), "Cannot allocate memory for d_MatchedIndexes");
@@ -999,16 +990,9 @@ TreeResult TreeMatcher::Match(IPSet set)
 
 	timer.Start();
 
-	if (UsePresorting)
-	{
-		thrust::sort(thrust::device, d_IPList, d_IPList + set.Size);
-		result.PresortingTime = timer.Stop();
-		timer.Start();
-	}
-
 	if (!UseMidLevels)
 	{
-		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, set.Size, Tree.MinPrefix
+		AssignIPSubnet << <blocks, threads >> > (Tree.d_Tree, set.d_IPs, d_MatchedIndexes, set.Size, Tree.MinPrefix
 #ifndef NO_THREADS_TRACE
 			, d_ThreadTimeStart, d_ThreadTimeEnd
 #endif
@@ -1018,7 +1002,7 @@ TreeResult TreeMatcher::Match(IPSet set)
 	}
 	else
 	{
-		AssignIPSubnetWithMidLevels << < blocks, threads>> > (Tree.d_Tree, d_IPList, d_MatchedIndexes, Tree.d_Level8, Tree.d_Level16, Tree.d_Level24, set.Size, Tree.MinPrefix
+		AssignIPSubnetWithMidLevels << < blocks, threads>> > (Tree.d_Tree, set.d_IPs, d_MatchedIndexes, Tree.d_Level8, Tree.d_Level16, Tree.d_Level24, set.Size, Tree.MinPrefix
 #ifndef NO_THREADS_TRACE
 			, d_ThreadTimeStart, d_ThreadTimeEnd
 #endif
@@ -1038,7 +1022,7 @@ TreeResult TreeMatcher::Match(IPSet set)
 
 	GpuAssert(cudaMemcpy(result.MatchedIndexes, d_MatchedIndexes, set.Size * sizeof(int), cudaMemcpyDeviceToHost), "Cannot copy memory to MatchedIndexes");
 	GpuAssert(cudaMemcpy(result.SortedSubnetsBits, Tree.d_SortedSubnetBits, 33 * Tree.Size * sizeof(char), cudaMemcpyDeviceToHost), "Cannot copy memory to SortedSubnetsBits");
-	GpuAssert(cudaMemcpy(result.IPsList, d_IPList, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to IPsList");
+	GpuAssert(cudaMemcpy(result.IPsList, set.d_IPs, set.Size * sizeof(unsigned int), cudaMemcpyDeviceToHost), "Cannot copy memory to IPsList");
 
 #ifndef NO_THREADS_TRACE
 
@@ -1050,17 +1034,13 @@ TreeResult TreeMatcher::Match(IPSet set)
 #endif
 
 	GpuAssert(cudaFree(d_MatchedIndexes), "Cannot free d_MatchedIndexes");
-	GpuAssert(cudaFree(d_IPList), "Cannot free d_IPList");
-
 	result.MatchingTime = timer.Stop();
-	GpuAssert(cudaSetDevice(0), "Cannot reset device.");
 
 	return result;
 }
 
 void TreeModel::Dispose()
 {
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device.");
 	GpuAssert(cudaFree(d_LevelNodes), "Cannot free d_LevelNodes");
 	GpuAssert(cudaFree(d_PrefixesEnd), "Cannot free d_PrefixesEnd");
 	GpuAssert(cudaFree(d_PrefixesStart), "CAnnot free d_PrefixesStart");
@@ -1070,6 +1050,5 @@ void TreeModel::Dispose()
 	GpuAssert(cudaFree(d_Level16), "Cannot free d_Level16");
 	GpuAssert(cudaFree(d_Level24), "Cannot free d_Level24");
 	GpuAssert(cudaFree(d_Level8), "Cannot free d_Level8");
-	GpuAssert(cudaSetDevice(0), "Cannot reset device.");
-	disposed = true;
+	Disposed = true;
 }

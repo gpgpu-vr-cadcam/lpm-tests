@@ -8,12 +8,13 @@ class IPSet
 public:
 
 	int Size;
-	unsigned char *d_IPData;
 	GpuSetup Setup;
 
+	unsigned int *d_IPs;
+	int *d_Lenghts;
+
 	IPSet() :
-		Size(0),
-		d_IPData(NULL) {}
+		Size(0), d_IPs(NULL), d_Lenghts(NULL) {}
 
 	~IPSet()
 	{
@@ -27,9 +28,7 @@ public:
 	void Dispose();
 	void Load(GpuSetup &setup, string path, int count);
 	void Generate(GpuSetup &setup, int count);
-	IPSet RandomSubset(int subsetSize);
-	IPSet RandomSubset(int subsetSize, GpuSetup &setup);
-	friend std::ostream& operator<<(std::ostream& os, const IPSet& obj);
+	void RandomSubset(int subsetSize, IPSet &sourceSet);
+	void Sort();
 	friend IPSet operator+(IPSet &l, IPSet &r);
-	
 };

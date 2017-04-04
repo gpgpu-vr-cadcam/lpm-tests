@@ -1,5 +1,5 @@
 #include "../Core/IPSet.cuh"
-#include "Tests.h"
+#include "TestEnv.h"
 #include <gtest/gtest.h>
 
 struct GenerateTest : testing::Test, testing::WithParamInterface<IPSetTest> {};
@@ -14,7 +14,8 @@ TEST_P(GenerateTest, For)
 
 	//then
 	EXPECT_EQ(set.Size, testCase.MasksToLoad);
-	EXPECT_TRUE(set.d_IPData != NULL);
+	EXPECT_TRUE(set.d_IPs != NULL);
+	EXPECT_TRUE(set.d_Lenghts != NULL);
 	EXPECT_EQ(set.Setup, testCase.Setup);
 
 	//cout << set;
@@ -33,7 +34,8 @@ TEST_P(LoadTest, For)
 
 	//then
 	EXPECT_EQ(set.Size, testCase.MasksToLoad);
-	EXPECT_TRUE(set.d_IPData != NULL);
+	EXPECT_TRUE(set.d_IPs != NULL);
+	EXPECT_TRUE(set.d_Lenghts != NULL);
 	EXPECT_EQ(set.Setup, testCase.Setup);
 
 	//cout << set;
@@ -57,7 +59,8 @@ TEST_P(AddTest, For)
 
 	//then
 	EXPECT_EQ(set.Size, set1.Size + set2.Size);
-	EXPECT_TRUE(set.d_IPData != NULL);
+	EXPECT_TRUE(set.d_IPs != NULL);
+	EXPECT_TRUE(set.d_Lenghts != NULL);
 	EXPECT_EQ(set.Setup, testCase.Setup);
 
 	//cout << set;
@@ -74,11 +77,13 @@ TEST_P(SubsetTest, For)
 	set.Load(testCase.Setup, ENV.TestDataPath + testCase.File.FileName, testCase.MasksToLoad);
 
 	//when
-	IPSet subset = set.RandomSubset(testCase.SubsetSize);
+	IPSet subset;
+	subset.RandomSubset(testCase.SubsetSize, set);
 
 	//then
 	EXPECT_EQ(subset.Size, testCase.SubsetSize);
-	EXPECT_TRUE(subset.d_IPData != NULL);
+	EXPECT_TRUE(set.d_IPs != NULL);
+	EXPECT_TRUE(set.d_Lenghts != NULL);
 	EXPECT_EQ(subset.Setup, testCase.Setup);
 
 	//cout << subset;

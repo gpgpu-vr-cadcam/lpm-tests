@@ -22,13 +22,11 @@ public:
 
 	~TreeModel()
 	{
-		if(!disposed)
+		if(!Disposed)
 			Dispose();
 	}
 	void Dispose();
-
-private:
-	bool disposed = false;
+	bool Disposed = true;
 };
 
 class TreeResult : public BaseResult

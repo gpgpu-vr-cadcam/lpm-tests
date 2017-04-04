@@ -1,5 +1,5 @@
 #include "../Matchers/RTreeMatcher.cuh"
-#include "Tests.h"
+#include "TestEnv.h"
 #include <gtest/gtest.h>
 
 struct RTreeMatcherBuildModelTest : testing::Test, testing::WithParamInterface<RTreeMatcherTest> {};

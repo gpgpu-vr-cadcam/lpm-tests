@@ -1,5 +1,5 @@
 #include "../Matchers/ArrayMatcher.cuh"
-#include "Tests.h"
+#include "TestEnv.h"
 #include <gtest/gtest.h>
 
 struct ArrayMatcherBuildModelTest : testing::Test, testing::WithParamInterface<IPSubsetTest> {};

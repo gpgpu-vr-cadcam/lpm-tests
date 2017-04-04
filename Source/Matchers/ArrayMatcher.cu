@@ -5,21 +5,13 @@
 
 #define MASK8  ((1 << 8)-1)
 
-__global__ void BuildIPsList(int Count, unsigned int* MaxIP, unsigned int *MinIP,  int *Lenghts, unsigned char *IPData)
+__global__ void BuildIPsList(int Count, unsigned int* MaxIP, unsigned int *MinIP,  int *Lenghts, unsigned int *IPs)
 {
 	int mask = blockIdx.x * blockDim.x + threadIdx.x;
 
 	while (mask < Count)
 	{
-		unsigned int address = 0;
-		Lenghts[mask] = IPData[mask * 5 + 4];
-
-		unsigned int part;
-		for (int i = 0; i < 4; ++i)
-		{
-			part = IPData[mask * 5 + i];
-			address |= part << (8 * (3 - i));
-		}
+		unsigned int address = IPs[mask];
 
 		MinIP[mask] = address;
 		MaxIP[mask] = ((1 << (32 - Lenghts[mask])) - 1) | address;
@@ -58,7 +50,6 @@ __global__ void FillArray(uchar3 *Array, int ArraySize, unsigned int *MaxIP, uns
 void ArrayMatcher::BuildModel(IPSet& set)
 {
 	Setup = set.Setup;
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
 	Timer timer;
 	timer.Start();
 
@@ -67,9 +58,11 @@ void ArrayMatcher::BuildModel(IPSet& set)
 	int *Lenghts;
 	GpuAssert(cudaMalloc((void**)&MaxIP, set.Size * sizeof(unsigned int)), "Cannot allocate MaxIP memory");
 	GpuAssert(cudaMalloc((void**)&MinIP, set.Size * sizeof(unsigned int)), "Cannot allocate MinIP memory");
-	GpuAssert(cudaMalloc((void**)&Lenghts, set.Size * sizeof(unsigned int)), "Cannot allocate Lenghts memory");
 
-	BuildIPsList << <Setup.Blocks, Setup.Threads >> >(set.Size, MaxIP, MinIP, Lenghts, set.d_IPData);
+	GpuAssert(cudaMalloc((void**)&Lenghts, set.Size * sizeof(unsigned int)), "Cannot allocate Lenghts memory");
+	GpuAssert(cudaMemcpy(Lenghts, set.d_Lenghts, set.Size * sizeof(int), cudaMemcpyDeviceToDevice), "Cannot copy Lenghts");
+
+	BuildIPsList << <Setup.Blocks, Setup.Threads >> >(set.Size, MaxIP, MinIP, Lenghts, set.d_IPs);
 	GpuAssert(cudaGetLastError(), "Error while launching BuildIPsList kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running BuildIPsList kernel");
 
@@ -101,22 +94,16 @@ void ArrayMatcher::BuildModel(IPSet& set)
 	GpuAssert(cudaFree(Lenghts), "Cannot free Lenghts memory");
 
 	ModelBuildTime = timer.Stop();
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
 }
 
-__global__ void MatchWithArray(uchar3 *Array, int Count, unsigned char *ips, int *result, int MaxLenght)
+__global__ void MatchWithArray(uchar3 *Array, int Count, unsigned int *ips, int *result, int MaxLenght)
 {
 	int ip = blockIdx.x * blockDim.x + threadIdx.x;
-	int address, part;
+	int address;
 
 	while (ip < Count)
 	{
-		address = 0;
-		address |= ips[ip * 5 + 0] << (8 * (3 - 0));
-		address |= ips[ip * 5 + 1] << (8 * (3 - 1));
-		address |= ips[ip * 5 + 2] << (8 * (3 - 2));
-		address |= ips[ip * 5 + 3] << (8 * (3 - 3));
-
+		address = ips[ip];
 		address = (address >> (32 - MaxLenght)) & ((1 << MaxLenght)-1);
 
 		if (Array[address].x != MASK8 || Array[address].y != MASK8 || Array[address].z != MASK8)
@@ -143,7 +130,7 @@ Result ArrayMatcher::Match(IPSet& set)
 	GpuAssert(cudaMalloc((void**)&d_Result, result.IpsToMatchCount * sizeof(int)), "Cannot allocate memory for Result");
 	thrust::fill_n(thrust::device, d_Result, result.IpsToMatchCount, -1);
 
-	MatchWithArray << <Setup.Blocks, Setup.Threads >> > (Array, set.Size, set.d_IPData, d_Result, MaxLenght);
+	MatchWithArray << <Setup.Blocks, Setup.Threads >> > (Array, set.Size, set.d_IPs, d_Result, MaxLenght);
 	GpuAssert(cudaGetLastError(), "Error while launching FillArray kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running FillArray kernel");
 

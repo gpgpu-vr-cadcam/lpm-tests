@@ -1,4 +1,4 @@
-#include "Tests.h"
+#include "TestEnv.h"
 #include "../Matchers/TreeMatcher.cuh"
 #include "../Matchers/RTreeMatcher.cuh"
 #include "../Matchers/ArrayMatcher.cuh"
@@ -7,171 +7,216 @@
 struct TreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<TreeMatcherPerformanceTestCase> {};
 TEST_P(TreeMatcherPerformanceTest, For)
 {
-	//given
-	TreeMatcherPerformanceTestCase testCase = GetParam();
+	size_t totalMemory, freeMemory1, freeMemory2;
+	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
 
+	TreeMatcherPerformanceTestCase testCase = GetParam();
 	srand(testCase.Seed);
-	GpuSetup setup(testCase.Blocks, testCase.Threads, testCase.DeviceID);
 
 	IPSet modelSet;
-	modelSet.Load(setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.ModelSubsetSize);
+	modelSet.Load(testCase.Setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.SourceSet.Size);
 
-	IPSet matchSet1 = modelSet.RandomSubset(testCase.MatchSubsetSize);
-	IPSet matchSet2;
-	matchSet2.Generate(setup, testCase.RandomMasksSetSize);
-	IPSet matchSet = matchSet1 + matchSet2;
-
-	TreeMatcher matcher(max(modelSet.Size, matchSet.Size));
-	matcher.UsePresorting = testCase.UsePresorting;
+	TreeMatcher matcher(max(testCase.MaxMatchSetSize(), modelSet.Size));
 	matcher.UseMidLevels = testCase.UseMidLevels;
 
-	//when
+	GpuAssert(cudaMemGetInfo(&freeMemory1, &totalMemory), "Cannot check memory usage");
 	matcher.BuildModel(modelSet);
-	TreeResult result = matcher.Match(matchSet);
+	GpuAssert(cudaMemGetInfo(&freeMemory2, &totalMemory), "Cannot check memory usage");
 
-	//then
-#ifndef NO_THREADS_TRACE
-	int startLine = ENV.ThreadsFileLines;
-	ENV.ThreadsFileLines += matchSet.Size;
-#endif
+	for (auto matchSetSize : testCase.MatchSubsetSize)
+		for (auto randomSize : testCase.RandomMasksSetSize)
+			for (auto usePresorting : testCase.PresortMatchSet)
+			{
+				int maskSubsetSize = (1 - randomSize) * matchSetSize;
+				int rndSetSize = randomSize * matchSetSize;
+				float presortingTime = 0;
 
-	ENV.ResultsFile << testCase.DeviceID << ";" << testCase.Blocks << ";" << testCase.Threads << ";"
-		<< testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
-		<< testCase.SourceSet.FileName << ";" << testCase.UsePresorting << ";" << testCase.UseMidLevels << ";"
-		<< matcher.ModelBuildTime << ";" << result.PresortingTime << ";" << result.MatchingTime;
+				IPSet matchSet;
+				if (maskSubsetSize == 0)
+				{
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet2;
+				}
 
-#ifndef NO_THREADS_TRACE
-		ENV.ResultsFile << ";" << startLine << ";" << ENV.ThreadsFileLines - 1;
-#endif
-		
-		 ENV.ResultsFile << endl;
-	
-#ifndef NO_THREADS_TRACE
-	for (int i = 0; i < matchSet.Size; ++i)
-		ENV.ThreadsFile << i << ";" << result.ThreadTimeStart[i] << ";" << result.ThreadTimeEnd[i] << endl;
-#endif
+				if (rndSetSize == 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+					matchSet = matchSet1;
+				}
 
-	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl << "Presorting time:" << result.PresortingTime;
+				if (maskSubsetSize != 0 && rndSetSize != 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet1 + matchSet2;
+				}
+
+				if (usePresorting)
+				{
+					Timer timer;
+					timer.Start();
+					matchSet.Sort();
+					presortingTime = timer.Stop();
+				}
+
+				TreeResult result = matcher.Match(matchSet);
+
+				ENV.TreeResultsFile << testCase << maskSubsetSize << ";" << rndSetSize << ";" << testCase.UseMidLevels << ";" << matcher.ModelBuildTime << ";";
+				ENV.TreeResultsFile << usePresorting << ";" << presortingTime << ";" << result.MatchingTime << ";" << freeMemory1 - freeMemory2 << ";" << endl;
+			}
 
 	//cleanup
-	GpuAssert(cudaSetDevice(setup.DeviceID), "Cannot set cuda device.");
 	modelSet.Dispose();
-	matchSet1.Dispose();
-	matchSet2.Dispose();
-	matchSet.Dispose();
 	matcher.Tree.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device.");
 }
-//INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
+INSTANTIATE_TEST_CASE_P(Test, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
+
+
 
 struct RTreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<RTreeMatcherPerformanceTestCase> {};
 TEST_P(RTreeMatcherPerformanceTest, For)
 {
-	//given
-	RTreeMatcherPerformanceTestCase testCase = GetParam();
+	size_t totalMemory, freeMemory1, freeMemory2;
 
+	RTreeMatcherPerformanceTestCase testCase = GetParam();
 	srand(testCase.Seed);
-	GpuSetup setup(testCase.Blocks, testCase.Threads, testCase.DeviceID);
 
 	IPSet modelSet;
-	modelSet.Load(setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.ModelSubsetSize);
-
-	IPSet matchSet1 = modelSet.RandomSubset(testCase.MatchSubsetSize);
-	IPSet matchSet2;
-	matchSet2.Generate(setup, testCase.RandomMasksSetSize);
-	IPSet matchSet = matchSet1 + matchSet2;
+	modelSet.Load(testCase.Setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.SourceSet.Size);
 
 	RTreeMatcher matcher(testCase.R);
 
-	//when
+	GpuAssert(cudaMemGetInfo(&freeMemory1, &totalMemory), "Cannot check memory usage");
 	matcher.BuildModel(modelSet);
-	Result result = matcher.Match(matchSet);
+	GpuAssert(cudaMemGetInfo(&freeMemory2, &totalMemory), "Cannot check memory usage");
 
-	//then
-	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
+	for(auto matchSetSize : testCase.MatchSubsetSize)
+		for(auto randomSize : testCase.RandomMasksSetSize)
+			for(auto usePresorting : testCase.PresortMatchSet)
+			{
+				int maskSubsetSize = (1 - randomSize) * matchSetSize;
+				int rndSetSize = randomSize * matchSetSize;
+				float presortingTime = 0;
 
-	ENV.ResultsFile << testCase.Seed << ";" << testCase.SourceSet.FileName << ";" << testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";" 
-		<< testCase.Blocks << ";" << testCase.Threads << ";" << testCase.DeviceID << ";" << "{";
-		for (int i = 0; i < testCase.R.size(); ++i)
-			ENV.ResultsFile << testCase.R[i] << ";";
-	ENV.ResultsFile << "}" << ";" << matcher.ModelBuildTime << ";" << result.MatchingTime << endl;
+				IPSet matchSet;
+				if(maskSubsetSize == 0)
+				{
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet2;
+				}
+
+				if(rndSetSize == 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+					matchSet = matchSet1;
+				}
+
+				if(maskSubsetSize != 0 && rndSetSize != 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet1 + matchSet2;
+				}
+
+				if (usePresorting)
+				{
+					Timer timer;
+					timer.Start();
+					matchSet.Sort();
+					presortingTime = timer.Stop();
+				}
+
+				Result result = matcher.Match(matchSet);
+
+				ENV.RTreeResultsFile << testCase << maskSubsetSize << ";" << rndSetSize << ";" << matcher.ModelBuildTime << ";";
+				ENV.RTreeResultsFile << usePresorting << ";" << presortingTime << ";" << result.MatchingTime << ";" << freeMemory1 - freeMemory2 << ";" << matcher.Model.L << ";";
+
+				ENV.RTreeResultsFile << "{";
+				for (int i = 0; i < testCase.R.size(); ++i)
+					ENV.RTreeResultsFile << testCase.R[i] << ",";
+				ENV.RTreeResultsFile << "}" << ";";
+
+				for (int i = 0; i < matcher.Model.L; ++i)
+					ENV.RTreeResultsFile << "{" << matcher.Model.GetMinListLenght(i) << "," << matcher.Model.GetMaxListLenght(i) << "," << ((matcher.Model.LevelsSizes[i] > 0) ? (matcher.Model.totalListItemsPerLevel[i] / matcher.Model.LevelsSizes[i]) : 0) << "," << matcher.Model.LevelsSizes[i] << "};";
+				ENV.RTreeResultsFile << endl;
+			}
 
 }
-//INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+INSTANTIATE_TEST_CASE_P(Test, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+
 
 struct ArrayMatcherPerformanceTest : testing::Test, testing::WithParamInterface<PerformanceTest> {};
 TEST_P(ArrayMatcherPerformanceTest, For)
 {
-	//given
+	size_t totalMemory, freeMemory1, freeMemory2;
 	PerformanceTest testCase = GetParam();
 
 	srand(testCase.Seed);
-	GpuSetup setup(testCase.Blocks, testCase.Threads, testCase.DeviceID);
 
 	IPSet modelSet;
-	modelSet.Load(setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.ModelSubsetSize);
-
-	IPSet matchSet1 = modelSet.RandomSubset(testCase.MatchSubsetSize);
-	IPSet matchSet2;
-	matchSet2.Generate(setup, testCase.RandomMasksSetSize);
-	IPSet matchSet = matchSet1 + matchSet2;
+	modelSet.Load(testCase.Setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.SourceSet.Size);
 
 	ArrayMatcher matcher;
-
-	//when
+	GpuAssert(cudaMemGetInfo(&freeMemory1, &totalMemory), "Cannot check memory usage");
 	matcher.BuildModel(modelSet);
-	Result result = matcher.Match(matchSet);
+	GpuAssert(cudaMemGetInfo(&freeMemory2, &totalMemory), "Cannot check memory usage");
 
-	//then
-	cout << "Model build time:" << matcher.ModelBuildTime << endl << "Matching time:" << result.MatchingTime << endl;
+	for (auto matchSetSize : testCase.MatchSubsetSize)
+		for (auto randomSize : testCase.RandomMasksSetSize)
+			for (auto usePresorting : testCase.PresortMatchSet)
+			{
+				int maskSubsetSize = (1 - randomSize) * matchSetSize;
+				int rndSetSize = randomSize * matchSetSize;
+				float presortingTime = 0;
 
-	ENV.ResultsFile << testCase.Seed << ";" << testCase.SourceSet.FileName << ";" << testCase.ModelSubsetSize << ";" << testCase.MatchSubsetSize << ";" << testCase.RandomMasksSetSize << ";"
-		<< testCase.Blocks << ";" << testCase.Threads << ";" << testCase.DeviceID << ";";
-	ENV.ResultsFile << ";" << matcher.ModelBuildTime << ";" << result.MatchingTime << endl;
+				IPSet matchSet;
+				if (maskSubsetSize == 0)
+				{
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet2;
+				}
 
+				if (rndSetSize == 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+					matchSet = matchSet1;
+				}
+
+				if (maskSubsetSize != 0 && rndSetSize != 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet1 + matchSet2;
+				}
+
+				if (usePresorting)
+				{
+					Timer timer;
+					timer.Start();
+					matchSet.Sort();
+					presortingTime = timer.Stop();
+				}
+
+				Result result = matcher.Match(matchSet);
+
+				ENV.ArrayResultsFile << testCase << maskSubsetSize << ";" << rndSetSize << ";" << matcher.ModelBuildTime << ";";
+				ENV.ArrayResultsFile << usePresorting << ";" << presortingTime << ";" << result.MatchingTime << ";" << freeMemory1 - freeMemory2 << ";" << endl;
+			}
 }
-INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
-
-struct RTreeMatcherListsLenghtsTest : testing::Test, testing::WithParamInterface<RTreeListsLenghtsTestCase> {};
-TEST_P(RTreeMatcherListsLenghtsTest, For)
-{
-	//given
-	RTreeListsLenghtsTestCase testCase = GetParam();
-
-	GpuSetup setup(testCase.Blocks, testCase.Threads, 0);
-
-	IPSet modelSet;
-	modelSet.Load(setup, ENV.TestDataPath + testCase.File.FileName, testCase.File.Size);
-	RTreeMatcher matcher(testCase.R);
-
-	srand(1234);
-	IPSet matchSet1 = modelSet.RandomSubset(200000);
-	srand(1234);
-	IPSet matchSet2;
-	matchSet2.Generate(setup, 200000);
-
-	//when
-	matcher.BuildModel(modelSet);
-	auto result1 = matcher.Match(modelSet);
-	auto result2 = matcher.Match(matchSet1);
-	auto result3 = matcher.Match(matchSet2);
-	
-	ENV.ListLenghtsFile << testCase.File.FileName << ";" << testCase.File.Size << ";" << setup.Blocks << ";" << setup.Threads << ";" << matcher.Model.L << ";" << "{";
-	for (int i = 0; i < testCase.R.size(); ++i)
-		ENV.ListLenghtsFile << testCase.R[i] << ";";
-	ENV.ListLenghtsFile << "}" << ";" << matcher.ModelBuildTime << ";";
-	ENV.ListLenghtsFile << result1.MatchingTime << ";";
-	ENV.ListLenghtsFile << result2.MatchingTime << ";";
-	ENV.ListLenghtsFile << result3.MatchingTime << ";";
-
-
-	for(int i = 0; i < matcher.Model.L; ++i)
-	{
-		ENV.ListLenghtsFile << "{" << matcher.Model.GetMinListLenght(i) << ";" << matcher.Model.GetMaxListLenght(i) << ";" << matcher.Model.totalListItemsPerLevel[i] / matcher.Model.LevelsSizes[i] << ";" << matcher.Model.LevelsSizes[i] << "};";
-	}
-
-	ENV.ListLenghtsFile << endl;
-
-}
-INSTANTIATE_TEST_CASE_P(Given_ProperSettings_TreeMatcherPerformanceMeasured, RTreeMatcherListsLenghtsTest, testing::ValuesIn(ENV.RTreeListsLenghtsTests));
+INSTANTIATE_TEST_CASE_P(Test, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));

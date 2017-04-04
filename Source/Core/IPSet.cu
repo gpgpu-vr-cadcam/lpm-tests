@@ -1,6 +1,5 @@
 #include "IPSet.cuh"
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -8,7 +7,6 @@
 #include <thrust/execution_policy.h>
 
 #include "device_launch_parameters.h"
-#include <iomanip>
 
 IPSet& IPSet::operator=(const IPSet& other)
 {
@@ -17,10 +15,11 @@ IPSet& IPSet::operator=(const IPSet& other)
 	Size = other.Size;
 	Setup = other.Setup;
 
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet = operator.");
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory in = operator.");
-	GpuAssert(cudaMemcpy(d_IPData, other.d_IPData, 5 * Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy ip masks to device memory in = operator.");
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet = operator.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPs), Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Lenghts), Size * sizeof(int)), "Cannot init Lenghts device memory.");
+
+	GpuAssert(cudaMemcpy(d_IPs, other.d_IPs, Size * sizeof(unsigned int), cudaMemcpyDeviceToDevice), "Cannot copy IPs to device memory in = operator.");
+	GpuAssert(cudaMemcpy(d_Lenghts, other.d_Lenghts, Size * sizeof(int), cudaMemcpyDeviceToDevice), "Cannot copy Lenghts to device memory in = operator.");
 
 	return *this;
 }
@@ -32,18 +31,40 @@ IPSet::IPSet(const IPSet& other)
 	Size = other.Size;
 	Setup = other.Setup;
 
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet = operator.");
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory in = operator.");
-	GpuAssert(cudaMemcpy(d_IPData, other.d_IPData, 5 * Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy ip masks to device memory in = operator.");
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet = operator.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPs), Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Lenghts), Size * sizeof(int)), "Cannot init Lenghts device memory.");
+
+	GpuAssert(cudaMemcpy(d_IPs, other.d_IPs, Size * sizeof(unsigned int), cudaMemcpyDeviceToDevice), "Cannot copy IPs to device memory in copy operator.");
+	GpuAssert(cudaMemcpy(d_Lenghts, other.d_Lenghts, Size * sizeof(int), cudaMemcpyDeviceToDevice), "Cannot copy Lenghts to device memory in copy operator.");
 }
 
 void IPSet::Dispose()
 {
-	if (d_IPData != NULL)
+	if(d_IPs != NULL)
 	{
-		GpuAssert(cudaFree(d_IPData), "Cannot free device memory in IPSet destructor.");
-		d_IPData = NULL;
+		GpuAssert(cudaFree(d_IPs), "Cannot free IPs memory in IPSet destructor");
+		GpuAssert(cudaFree(d_Lenghts), "Cannot free Lenghts memory in IPSet destructor");
+		d_IPs = NULL;
+		d_Lenghts = NULL;
+	}
+}
+
+__global__ void BuildIPs(unsigned char * ipData, unsigned int * ips, int *lenghts, int size)
+{
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned char b1, b2, b3, b4;
+
+	while (i < size)
+	{
+		b1 = ipData[i * 5];
+		b2 = ipData[i * 5 + 1];
+		b3 = ipData[i * 5 + 2];
+		b4 = ipData[i * 5 + 3];
+
+		ips[i] = (b1 << 24) + (b2 << 16) + (b3 << 8) + b4;
+		lenghts[i] = ipData[i * 5 + 4];
+
+		i += blockDim.x * gridDim.x;
 	}
 }
 
@@ -91,13 +112,19 @@ void IPSet::Load(GpuSetup &setup, string path, int count)
 	for(int i = 0; i < Size * 5; ++i)
 		IPData[i] = static_cast<unsigned char>(stoi(parts[i]));
 
-
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet Load.");
+	unsigned char *d_IPData;
 	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
 	GpuAssert(cudaMemcpy(d_IPData, IPData, 5 * Size * sizeof(unsigned char), cudaMemcpyHostToDevice), "Cannot copy ip masks to device memory.");
-	GpuAssert(cudaSetDevice(0), "Cannot reset cuda device in IPSet Load.");
+
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPs), Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Lenghts), Size * sizeof(int)), "Cannot init Lenghts device memory.");
+
+	BuildIPs << < Setup.Blocks, Setup.Threads >> > (d_IPData, d_IPs, d_Lenghts, Size);
+	GpuAssert(cudaPeekAtLastError(), "Error while launching BuildIPs kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running BuildIPs kernel");
 
 	delete[] IPData;
+	GpuAssert(cudaFree(d_IPData), "Cannot free d_IPData in Load");
 }
 
 void IPSet::Generate(GpuSetup& setup, int count)
@@ -130,15 +157,23 @@ void IPSet::Generate(GpuSetup& setup, int count)
 		IPData[i * 5 + 4] = maskLenght;
 	}
 
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet Generate.");
+	unsigned char *d_IPData;
 	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPData), 5 * Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
 	GpuAssert(cudaMemcpy(d_IPData, IPData, 5 * Size * sizeof(unsigned char), cudaMemcpyHostToDevice), "Cannot copy ip masks to device memory.");
-	GpuAssert(cudaSetDevice(0), "Cannot reset cuda device in IPSet Generate.");
+
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPs), Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Lenghts), Size * sizeof(int)), "Cannot init Lenghts device memory.");
+
+	BuildIPs << < Setup.Blocks, Setup.Threads >> > (d_IPData, d_IPs, d_Lenghts, Size);
+	GpuAssert(cudaPeekAtLastError(), "Error while launching BuildIPs kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running BuildIPs kernel");
 
 	delete[] IPData;
+	GpuAssert(cudaFree(d_IPData), "Cannot free d_IPData in Load");
 }
 
-__global__ void CopyIPsToSubset(unsigned char *dstIPs, unsigned char *srcIPs, int *indexes, int subsetSize)
+__global__ void CopyIPsToSubset(int *indexes, int subsetSize, 
+	unsigned int *IPs, int *Lenghts, unsigned int *sourceSetIPs, int * sourceSetLenghts)
 {
 	int iteration = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -146,81 +181,47 @@ __global__ void CopyIPsToSubset(unsigned char *dstIPs, unsigned char *srcIPs, in
 	{
 		int sourceInd = indexes[iteration];
 
-		dstIPs[5 * iteration] = srcIPs[5 * sourceInd];
-		dstIPs[5 * iteration + 1] = srcIPs[5 * sourceInd + 1];
-		dstIPs[5 * iteration + 2] = srcIPs[5 * sourceInd + 2];
-		dstIPs[5 * iteration + 3] = srcIPs[5 * sourceInd + 3];
-		dstIPs[5 * iteration + 4] = srcIPs[5 * sourceInd + 4];
+		IPs[iteration] = sourceSetIPs[sourceInd];
+		Lenghts[iteration] = sourceSetLenghts[sourceInd];
 
 		iteration += blockDim.x * gridDim.x;
 	}
 }
 
-IPSet IPSet::RandomSubset(int subsetSize, GpuSetup &setup)
+void IPSet::RandomSubset(int subsetSize, IPSet& sourceSet)
 {
-	IPSet subset = RandomSubset(subsetSize);
-	subset.Setup = setup;
-
-	if (subset.Setup.DeviceID == Setup.DeviceID)
-		return subset;
-
-	unsigned char *d_OldData = subset.d_IPData;
-	GpuAssert(cudaSetDevice(subset.Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&subset.d_IPData), 5 * subset.Size * sizeof(unsigned char)), "Cannot malloc memory on other device for subset.");
-	GpuAssert(cudaMemcpy(subset.d_IPData, d_OldData, 5 * subset.Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy data to other device.");
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
-	GpuAssert(cudaFree(d_OldData), "Cannot free old data of random subset.");
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
-	return subset;
-}
-
-IPSet IPSet::RandomSubset(int subsetSize)
-{
-	IPSet subset;
-	subset.Setup = Setup;
-	subset.Size = subsetSize;
-
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
+	Setup = sourceSet.Setup;
+	Size = subsetSize;
 
 	int *d_Indexes;
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Indexes), subset.Size * sizeof(int)), "Cannot init indexes device memory.");
 	int *d_RandomValues;
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_RandomValues), subset.Size * sizeof(int)), "Cannot init random values device memory.");
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&subset.d_IPData), 5 * subset.Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
+	
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_IPs), Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Lenghts), Size * sizeof(int)), "Cannot init Lenghts device memory.");
 
-	thrust::sequence(thrust::device, d_Indexes, d_Indexes + Size, 0);
-	if(subset.Size > Size)
-		thrust::generate_n(thrust::device, d_Indexes + Size, subsetSize - Size, Rnd(0, Size));
-	thrust::generate_n(thrust::device, d_RandomValues, subset.Size, Rnd(0, subset.Size));
-	thrust::stable_sort_by_key(thrust::device, d_RandomValues, d_RandomValues + subset.Size, d_Indexes);
-	thrust::sort(thrust::device, d_Indexes, d_Indexes + subset.Size);
+	int maxSize = subsetSize > sourceSet.Size ? subsetSize : sourceSet.Size;
+	
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Indexes), maxSize * sizeof(int)), "Cannot init indexes device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_RandomValues), maxSize * sizeof(int)), "Cannot init random values device memory.");
 
-	CopyIPsToSubset << < Setup.Blocks, Setup.Threads >> > (subset.d_IPData, d_IPData, d_Indexes, subset.Size);
+	thrust::sequence(thrust::device, d_Indexes, d_Indexes + sourceSet.Size, 0);
+	thrust::generate_n(thrust::device, d_Indexes + sourceSet.Size, maxSize - sourceSet.Size, Rnd(0, sourceSet.Size));
+
+	thrust::generate_n(thrust::device, d_RandomValues, maxSize, Rnd(0, maxSize));
+	thrust::stable_sort_by_key(thrust::device, d_RandomValues, d_RandomValues + maxSize, d_Indexes);
+	thrust::sort(thrust::device, d_Indexes, d_Indexes + Size);
+
+	CopyIPsToSubset << < Setup.Blocks, Setup.Threads >> > (d_Indexes, Size, d_IPs, d_Lenghts, sourceSet.d_IPs, sourceSet.d_Lenghts);
 	GpuAssert(cudaPeekAtLastError(), "Error while launching CopyIPsToSubset kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running CopyIPsToSubset kernel");
 
 	GpuAssert(cudaFree(d_Indexes), "Cannot free indexes memory.");
 	GpuAssert(cudaFree(d_RandomValues), "Cannot free random values memory.");
-
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
-
-	return subset;
 }
 
-std::ostream& operator<<(std::ostream& os, const IPSet& obj)
+void IPSet::Sort()
 {
-	unsigned char *ips = new unsigned char[obj.Size * 5];
-
-	GpuAssert(cudaSetDevice(obj.Setup.DeviceID), "Cannot set cuda device in IPSet << operator.");
-	GpuAssert(cudaMemcpy(ips, obj.d_IPData, obj.Size * 5 * sizeof(unsigned char), cudaMemcpyDeviceToHost), "Cannot copy ip masks in << operator.");
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet << operator.");
-
-	for(int i = 0; i < obj.Size; ++i)
-		os << static_cast<int>(ips[5 * i + 4]) << setw(10) << static_cast<int>(ips[5 * i]) << "." << static_cast<int>(ips[5 * i + 1]) << "." 
-			<< static_cast<int>(ips[5 * i + 2]) << "." << static_cast<int>(ips[5 * i + 3])  << endl;
-
-	delete[] ips;
-	return os;
+	thrust::sort_by_key(thrust::device, d_IPs, d_IPs + Size, d_Lenghts);
 }
 
 IPSet operator+(IPSet& l, IPSet& r)
@@ -233,11 +234,14 @@ IPSet operator+(IPSet& l, IPSet& r)
 	set.Size = l.Size + r.Size;
 	set.Setup = l.Setup;
 
-	GpuAssert(cudaSetDevice(set.Setup.DeviceID), "Cannot set cuda device in IPSet add.");
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&set.d_IPData), 5 * set.Size * sizeof(unsigned char)), "Cannot init ip masks device memory.");
-	GpuAssert(cudaMemcpy(set.d_IPData, l.d_IPData, 5 * l.Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy ip masks to device memory.");
-	GpuAssert(cudaMemcpy(set.d_IPData + 5 * l.Size * sizeof(unsigned char), r.d_IPData, 5 * r.Size * sizeof(unsigned char), cudaMemcpyDeviceToDevice), "Cannot copy ip masks to device memory.");
-	GpuAssert(cudaSetDevice(0), "Cannot reset cuda device in IPSet Generate.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&set.d_IPs), set.Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&set.d_Lenghts), set.Size * sizeof(int)), "Cannot init Lenghts device memory.");
+
+	GpuAssert(cudaMemcpy(set.d_IPs, l.d_IPs, l.Size * sizeof(unsigned int), cudaMemcpyDeviceToDevice), "Cannot copy IPs to device memory in + operator.");
+	GpuAssert(cudaMemcpy(set.d_Lenghts, l.d_Lenghts, l.Size * sizeof(int), cudaMemcpyDeviceToDevice), "Cannot copy Lenghts to device memory in + operator.");
+
+	GpuAssert(cudaMemcpy(set.d_IPs + l.Size, r.d_IPs, r.Size * sizeof(unsigned int), cudaMemcpyDeviceToDevice), "Cannot copy IPs to device memory in + operator.");
+	GpuAssert(cudaMemcpy(set.d_Lenghts + l.Size, r.d_Lenghts, r.Size * sizeof(int), cudaMemcpyDeviceToDevice), "Cannot copy Lenghts to device memory in + operator.");
 
 	return set;
 }

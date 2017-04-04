@@ -5,24 +5,14 @@
 #include <thrust/extrema.h>
 #include <thrust/execution_policy.h>
 
-__global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, int *Lenghts, unsigned char *IPData)
+__global__ void CopyMasks(int Count, int *R, int *rSums, int L, int** Masks, unsigned int *IPs)
 {
 	int mask = blockIdx.x * blockDim.x + threadIdx.x;
 
 	while  (mask < Count)
 	{
-		int address = 0;
-		Lenghts[mask] = IPData[mask * 5 + 4];
-
-		int part;
-		for (int i = 0; i < 4; ++i)
-		{
-			part = IPData[mask * 5 + i];
-			address |= part << (8 * (3 - i));
-		}
-
 		for (int l = 0; l < L; ++l)
-			Masks[l][mask] = (address >> (32 - rSums[l])) & ((1 << R[l]) - 1);
+			Masks[l][mask] = (IPs[mask] >> (32 - rSums[l])) & ((1 << R[l]) - 1);
 
 		mask += blockDim.x * gridDim.x;
 	}
@@ -215,11 +205,12 @@ void RTreeModel::Build(IPSet &set, GpuSetup setup)
 	thrust::inclusive_scan(thrust::device, R, R + L, rSums);
 	thrust::exclusive_scan(thrust::device, R, R + L, rPreSums);
 
-	//TODO: Niepotrzebne jest budowanie wêz³ów, je¿eli ¿adna maska w zakresie nie jest dostatecznie d³uga.
 
 	//Allocationg memory for masks
 	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&Masks), L * sizeof(int*)), "Cannot init ip masks device memory");
-	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&Lenghts), Count * sizeof(int)), "Cannot init Lenght mamory");
+
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&Lenghts), Count * sizeof(int)), "Cannot init Lenght memory");
+	GpuAssert(cudaMemcpy(Lenghts, set.d_Lenghts, Count * sizeof(int), cudaMemcpyDeviceToDevice), "Cannot copy Lenghts");
 
 	int** h_Masks = new int*[L];
 	for (int l = 0; l < L; ++l)
@@ -229,7 +220,7 @@ void RTreeModel::Build(IPSet &set, GpuSetup setup)
 	delete[] h_Masks;
 
 	//Copying masks from IPSet and partitioning them
-	CopyMasks <<< setup.Blocks, setup.Threads >>> (Count,  R, rSums,  L, Masks, Lenghts, set.d_IPData);
+	CopyMasks <<< setup.Blocks, setup.Threads >>> (Count,  R, rSums,  L, Masks, set.d_IPs);
 	GpuAssert(cudaGetLastError(), "Error while launching CopyMasks kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running CopyMasks kernel");
 
@@ -546,6 +537,9 @@ void RTreeModel::Build(IPSet &set, GpuSetup setup)
 
 int RTreeModel::GetMinListLenght(int i)
 {
+	if (LevelsSizes[i] == 0)
+		return 0;
+
 	int min;
 	int* minP = thrust::min_element(thrust::device, h_ListsLenghts[i],
 		h_ListsLenghts[i] + LevelsSizes[i]);
@@ -556,6 +550,9 @@ int RTreeModel::GetMinListLenght(int i)
 
 int RTreeModel::GetMaxListLenght(int i)
 {
+	if (LevelsSizes[i] == 0)
+		return 0;
+
 	int max;
 	int* maxP = thrust::max_element(thrust::device, h_ListsLenghts[i],
 		h_ListsLenghts[i] + LevelsSizes[i]);
@@ -647,12 +644,10 @@ void RTreeModel::Dispose()
 void RTreeMatcher::BuildModel(IPSet &set)
 {
 	Setup = set.Setup;
-	GpuAssert(cudaSetDevice(Setup.DeviceID), "Cannot set cuda device in IPSet RandomSubset.");
 	Timer timer;
 	timer.Start();
 	Model.Build(set, Setup);
 	ModelBuildTime = timer.Stop();
-	GpuAssert(cudaSetDevice(0), "Cannot set cuda device in IPSet RandomSubset.");
 }
 
 __global__ void MatchIPs(int ** Children, int *ChildrenCount, int **Masks, int *result, int **ListsStarts, int **ListsLenghts, int *Lenghts, int L, int *R, int *rPreSums, int *ListItems,
@@ -714,11 +709,8 @@ Result RTreeMatcher::Match(IPSet &set)
 		GpuAssert(cudaMalloc(reinterpret_cast<void**>(&h_Masks[l]), set.Size * sizeof(int)), "Cannot init ip masks device memory");
 	GpuAssert(cudaMemcpy(d_IPs, h_Masks, Model.L * sizeof(int*), cudaMemcpyHostToDevice), "Cannot copy MaxIP pointers to GPU");
 
-	
-
 	//Copying ips from IPSet and partitioning them
-	//TODO: Tutaj budowanie d_IPsLenghts jest niepotrzebne
-	CopyMasks << < Setup.Blocks, Setup.Threads >> > (set.Size, Model.R, Model.rSums, Model.L, d_IPs, d_IPsLenghts, set.d_IPData);
+	CopyMasks << < Setup.Blocks, Setup.Threads >> > (set.Size, Model.R, Model.rSums, Model.L, d_IPs, set.d_IPs);
 	GpuAssert(cudaGetLastError(), "Error while launching CopyMasks kernel");
 	GpuAssert(cudaDeviceSynchronize(), "Error while running CopyMasks kernel");
 
