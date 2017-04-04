@@ -605,7 +605,7 @@ __global__ void AssignIPSubnetWithMidLevels(int ** dev_tree, unsigned int * dev_
 			{
 				int level = 0;
 				int cur;
-				trav = dev_tree[0][2 + ((ip & (1 << 31)) >> 31)];
+				trav = dev_tree[0][2 + (((int)ip & (1 << 31)) >> 31)];
 				level++;
 				while (trav > -1 && level < 8)
 				{
@@ -656,7 +656,7 @@ __global__ void AssignIPSubnet(int ** dev_tree, unsigned int * dev_ips_list, int
 		int cur;
 		char level = 0;
 		int trav;
-		trav = dev_tree[0][2 + ((ip & (1 << 31)) >> 31)];
+		trav = dev_tree[0][2 + (((int)ip & (1 << 31)) >> 31)];
 		level++;
 		while (trav > -1)
 		{
@@ -745,10 +745,10 @@ void TreeResult::PrintResult()
 			unsigned char * submit = new unsigned char[5];
 			ConvertFromBits(SortedSubnetsBits + MatchedIndexes[i] * 33, submit);
 			submit[4] = SortedSubnetsBits[MatchedIndexes[i] * 33 + 32];
-			printf("ip: %d.%d.%d.%d --> subnet: %d.%d.%d.%d/%d\n", ((IPsList[i] & 4278190080) >> 24), ((IPsList[i] & 16711680) >> 16), ((IPsList[i] & 65280) >> 8), (IPsList[i] & 255), submit[0], submit[1], submit[2], submit[3], submit[4]);
+			printf("ip: %lu.%u.%u.%u --> subnet: %d.%d.%d.%d/%d\n", ((IPsList[i] & 4278190080) >> 24), ((IPsList[i] & 16711680) >> 16), ((IPsList[i] & 65280) >> 8), (IPsList[i] & 255), submit[0], submit[1], submit[2], submit[3], submit[4]);
 		}
 		else
-			printf("IP_ID : %d -> ip: %d.%d.%d.%d ->  sIndx :  %d\n", i, ((IPsList[i] & 4278190080) >> 24), ((IPsList[i] & 16711680) >> 16), ((IPsList[i] & 65280) >> 8), (IPsList[i] & 255), MatchedIndexes[i]);
+			printf("IP_ID : %d -> ip: %lu.%u.%u.%u ->  sIndx :  %d\n", i, ((IPsList[i] & 4278190080) >> 24), ((IPsList[i] & 16711680) >> 16), ((IPsList[i] & 65280) >> 8), (IPsList[i] & 255), MatchedIndexes[i]);
 	}
 }
 

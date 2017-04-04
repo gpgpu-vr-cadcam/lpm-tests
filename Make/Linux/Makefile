@@ -12,7 +12,7 @@ GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
 
 UTILS=$(BIN)/Tmp/Utils.o
 CORE=$(BIN)/Tmp/IPSet.o $(BIN)/Tmp/Result.o
-MATCHERS=$(BIN)/Tmp/TreeMatcher.o $(BIN)/Tmp/RTreeMatcher.o
+MATCHERS=$(BIN)/Tmp/TreeMatcher.o $(BIN)/Tmp/RTreeMatcher.o $(BIN)/Tmp/ArrayMatcher.o
 LIB=$(CORE) $(UTILS) $(MATCHERS)
 
 GTEST=/usr/lib/libgtest.a  /usr/lib/libgtest_main.a
@@ -55,6 +55,9 @@ $(BIN)/Tmp/PerformanceTestsMain.o: $(SOURCE)/Tests/PerformanceTestsMain.cu $(SOU
 
 $(BIN)/Tmp/PerformanceTests.o: $(SOURCE)/Tests/PerformanceTests.cpp $(SOURCE)/Tests/Tests.h
 	$(NVCC) $(NVCC_FLAGS) -D PERF_TEST -c $(SOURCE)/Tests/PerformanceTests.cpp -o $(BIN)/Tmp/PerformanceTests.o
+
+$(BIN)/Tmp/ArrayMatcher.o: $(SOURCE)/Matchers/ArrayMatcher.cu $(SOURCE)/Matchers/ArrayMatcher.cuh $(SOURCE)/Core/BaseResult.h
+	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Matchers/ArrayMatcher.cu -o $(BIN)/Tmp/ArrayMatcher.o
 
 $(BIN)/Tmp/RTreeMatcher.o: $(SOURCE)/Matchers/RTreeMatcher.cu $(SOURCE)/Matchers/RTreeMatcher.cuh $(SOURCE)/Core/BaseResult.h
 	$(NVCC) $(NVCC_FLAGS) -c $(SOURCE)/Matchers/RTreeMatcher.cu -o $(BIN)/Tmp/RTreeMatcher.o
