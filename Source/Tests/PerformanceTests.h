@@ -38,22 +38,6 @@ public:
 	}
 };
 
-class TreeMatcherPerformanceTestCase : public PerformanceTest
-{
-public:
-	bool UseMidLevels;
-
-	TreeMatcherPerformanceTestCase(PerformanceTest &performanceTest, bool use_mid_levels)
-		: PerformanceTest(performanceTest.Seed, performanceTest.SourceSet, performanceTest.MatchSubsetSize, 
-			performanceTest.RandomMasksSetSize, performanceTest.PresortMatchSet, performanceTest.Setup),
-		UseMidLevels(use_mid_levels) {}
-
-	friend std::ostream& operator<<(std::ostream& os, const TreeMatcherPerformanceTestCase& obj)
-	{
-		return os << static_cast<const PerformanceTest&>(obj);
-	}
-};
-
 class RTreeMatcherPerformanceTestCase : public PerformanceTest
 {
 public:

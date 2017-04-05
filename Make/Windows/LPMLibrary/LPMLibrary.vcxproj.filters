@@ -24,9 +24,6 @@
     <ClInclude Include="..\..\..\Source\Tests\Tests.h">
       <Filter>Tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Source\Matchers\TreeMatcher.cuh">
-      <Filter>Matchers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\Source\Core\BaseResult.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -35,9 +32,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Core\Result.cuh">
       <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Matchers\ArrayMatcher.cuh">
-      <Filter>Matchers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Tests\PerformanceTests.h">
       <Filter>Tests</Filter>
@@ -55,17 +49,11 @@
     <CudaCompile Include="..\..\..\Source\Core\IPSet.cu">
       <Filter>Core</Filter>
     </CudaCompile>
-    <CudaCompile Include="..\..\..\Source\Matchers\TreeMatcher.cu">
-      <Filter>Matchers</Filter>
-    </CudaCompile>
     <CudaCompile Include="..\..\..\Source\Matchers\RTreeMatcher.cu">
       <Filter>Matchers</Filter>
     </CudaCompile>
     <CudaCompile Include="..\..\..\Source\Core\Result.cu">
       <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\..\..\Source\Matchers\ArrayMatcher.cu">
-      <Filter>Matchers</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

@@ -25,10 +25,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Source\Tests\ArrayMatcherTests.cpp" />
     <ClCompile Include="..\..\..\Source\Tests\IPSetTests.cpp" />
     <ClCompile Include="..\..\..\Source\Tests\RTreeMatcherTests.cpp" />
-    <ClCompile Include="..\..\..\Source\Tests\TreeMatcherTests.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C095188B-104D-459C-AE9F-9EDB49636C1D}</ProjectGuid>

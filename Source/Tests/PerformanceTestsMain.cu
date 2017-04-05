@@ -12,8 +12,6 @@ int main(int argc, char **argv)
 	::testing::InitGoogleTest(&argc, argv);
 	auto ret = RUN_ALL_TESTS();
 
-	ENV.ArrayResultsFile.close();
-	ENV.TreeResultsFile.close();
 	ENV.RTreeResultsFile.close();
 
 #ifndef NO_THREADS_TRACE

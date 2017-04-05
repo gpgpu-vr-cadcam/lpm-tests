@@ -18,11 +18,8 @@ public:
 	vector<RTreeMatcherTest> RTreeMatcherTests;
 
 	vector<PerformanceTest> PerformanceTests;
-	vector<TreeMatcherPerformanceTestCase> TreeMatcherPerformanceTests;
 	vector<RTreeMatcherPerformanceTestCase> RTreeMatcherPerformanceTests;
 
-	ofstream ArrayResultsFile;
-	ofstream TreeResultsFile;
 	ofstream RTreeResultsFile;
 
 	ofstream ThreadsFile;
@@ -130,23 +127,10 @@ public:
 				for (auto setup : PerfSetups)
 					PerformanceTests.push_back(PerformanceTest(s, testFile, MatchSetSize, RandomMasks, UsePresorting, setup));
 
-		ArrayResultsFile.open("ArrayTestResults.txt");
-
 #ifndef NO_THREADS_TRACE
 		ThreadsFile.open("ThreadsTimes.txt");
 		ThreadsFileLines = 0;
 #endif
-	}
-
-	void InitTreeMatcherPerformanceTests()
-	{
-		vector<bool> UseMidLevels = { false, true };
-
-		for (auto perfTest : PerformanceTests)
-			for (auto useMidLevels : UseMidLevels)
-				TreeMatcherPerformanceTests.push_back(TreeMatcherPerformanceTestCase(perfTest, useMidLevels));
-
-		TreeResultsFile.open("TreeTestResults.txt");
 	}
 
 	void InitRTreeMatcherPerformanceTests()
@@ -180,7 +164,6 @@ public:
 
 #ifdef PERF_TEST
 		InitPerformanceTests();
-		InitTreeMatcherPerformanceTests();
 		InitRTreeMatcherPerformanceTests();
 #endif
 	}
