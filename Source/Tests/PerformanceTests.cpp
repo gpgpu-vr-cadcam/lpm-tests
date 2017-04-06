@@ -9,7 +9,6 @@ TEST_P(TreeMatcherPerformanceTest, For)
 {
 	size_t totalMemory, freeMemory1, freeMemory2;
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
-
 	TreeMatcherPerformanceTestCase testCase = GetParam();
 	srand(testCase.Seed);
 
