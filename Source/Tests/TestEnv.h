@@ -78,8 +78,8 @@ public:
 	void InitPerfSetups()
 	{
 		vector<int> devices = { 0 };
-		vector<int> blocks = { 256, 512, 1024 };
-		vector<int> threads = { 256, 512, 1024 };
+		vector<int> blocks = { 128, 256, 512, 1024 };
+		vector<int> threads = { 128, 256, 512, 1024 };
 
 		for (auto d : devices)
 			for (auto b : blocks)
@@ -120,8 +120,8 @@ public:
 
 	void InitPerformanceTests()
 	{
-		vector<int> Seeds = { 5236, 1090, 9876 };
-		vector<int> MatchSetSize = { 25000, 50000, 75000, 100000, 250000, 500000, 750000, 1000000, 2500000, 5000000, 7500000, 10000000 };
+		vector<int> Seeds = { 5236, 1090, 9876, 4254, 7648, 5983, 5867, 3329, 7249 };
+		vector<int> MatchSetSize = { 250000, 500000, 750000, 1000000, 2500000, 5000000, 7500000, 10000000 };
 		vector<bool> UsePresorting = { false, true };
 		vector<float> RandomMasks = { 0, 0.25, 0.5, 0.75, 1 };
 
@@ -153,11 +153,16 @@ public:
 	{
 		vector<vector<int>> rs =
 		{
-			{ 16, 8, 8 },
-			{ 8, 8, 8, 8 },
+			{ 4, 4, 4, 4, 4, 4, 8 },
+			{ 4, 4, 4, 4, 8, 8 },
 			{ 8, 4, 4, 4, 4, 8 },
-			{ 5, 5, 6, 8, 8 },
-			{ 4, 4, 4, 4, 8, 8}
+			{ 8, 2, 2, 2, 2, 2, 2, 2, 2, 8 },
+			{ 8, 4, 4, 2, 2, 2, 2, 8 },
+			{ 8, 4, 4, 4, 2, 2, 8 },
+			{ 8, 8, 8, 8 },
+			{ 8, 8, 4, 4, 8 },
+			{ 8, 8, 2, 2, 2, 2, 8 },
+			{ 8, 8, 4, 2, 2, 8 }
 		};
 
 		for (auto perfTest : PerformanceTests)
