@@ -224,6 +224,36 @@ void IPSet::Sort()
 	thrust::sort_by_key(thrust::device, d_IPs, d_IPs + Size, d_Lenghts);
 }
 
+void IPSet::Randomize()
+{
+	int *d_Indexes;
+	int *d_RandomValues;
+
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_Indexes), Size * sizeof(int)), "Cannot init indexes device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&d_RandomValues), Size * sizeof(int)), "Cannot init random values device memory.");
+
+	thrust::sequence(thrust::device, d_Indexes, d_Indexes + Size, 0);
+	thrust::generate_n(thrust::device, d_RandomValues, Size, Rnd(0, Size));
+
+	unsigned int *new_IPs;
+	int *new_Lenghts;
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&new_IPs), Size * sizeof(unsigned int)), "Cannot init IPs device memory.");
+	GpuAssert(cudaMalloc(reinterpret_cast<void**>(&new_Lenghts), Size * sizeof(int)), "Cannot init Lenghts device memory.");
+
+	CopyIPsToSubset << < Setup.Blocks, Setup.Threads >> > (d_Indexes, Size, new_IPs, new_Lenghts, d_IPs, d_Lenghts);
+	GpuAssert(cudaPeekAtLastError(), "Error while launching CopyIPsToSubset kernel");
+	GpuAssert(cudaDeviceSynchronize(), "Error while running CopyIPsToSubset kernel");
+
+	GpuAssert(cudaFree(d_IPs), "Cannot free IPs memory.");
+	GpuAssert(cudaFree(d_Lenghts), "Cannot free Lenghts values memory.");
+
+	d_IPs = new_IPs;
+	d_Lenghts = new_Lenghts;
+
+	GpuAssert(cudaFree(d_Indexes), "Cannot free indexes memory.");
+	GpuAssert(cudaFree(d_RandomValues), "Cannot free random values memory.");
+}
+
 IPSet operator+(IPSet& l, IPSet& r)
 {
 	IPSet set;

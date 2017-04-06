@@ -63,6 +63,8 @@ TEST_P(TreeMatcherPerformanceTest, For)
 					matchSet.Sort();
 					presortingTime = timer.Stop();
 				}
+				else
+					matchSet.Randomize();
 
 				TreeResult result = matcher.Match(matchSet);
 
@@ -83,7 +85,7 @@ struct RTreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<
 TEST_P(RTreeMatcherPerformanceTest, For)
 {
 	size_t totalMemory, freeMemory1, freeMemory2;
-
+	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
 	RTreeMatcherPerformanceTestCase testCase = GetParam();
 	srand(testCase.Seed);
 
@@ -136,6 +138,8 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 					matchSet.Sort();
 					presortingTime = timer.Stop();
 				}
+				else
+					matchSet.Randomize();
 
 				Result result = matcher.Match(matchSet);
 
@@ -161,7 +165,7 @@ TEST_P(ArrayMatcherPerformanceTest, For)
 {
 	size_t totalMemory, freeMemory1, freeMemory2;
 	PerformanceTest testCase = GetParam();
-
+	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
 	srand(testCase.Seed);
 
 	IPSet modelSet;
@@ -212,6 +216,8 @@ TEST_P(ArrayMatcherPerformanceTest, For)
 					matchSet.Sort();
 					presortingTime = timer.Stop();
 				}
+				else
+					matchSet.Randomize();
 
 				Result result = matcher.Match(matchSet);
 

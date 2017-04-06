@@ -79,6 +79,7 @@ TEST_P(SubsetTest, For)
 	//when
 	IPSet subset;
 	subset.RandomSubset(testCase.SubsetSize, set);
+	subset.Randomize();
 
 	//then
 	EXPECT_EQ(subset.Size, testCase.SubsetSize);

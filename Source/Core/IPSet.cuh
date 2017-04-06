@@ -30,5 +30,7 @@ public:
 	void Generate(GpuSetup &setup, int count);
 	void RandomSubset(int subsetSize, IPSet &sourceSet);
 	void Sort();
+	void Randomize();
+
 	friend IPSet operator+(IPSet &l, IPSet &r);
 };
