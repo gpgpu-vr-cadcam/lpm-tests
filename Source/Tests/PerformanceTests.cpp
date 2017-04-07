@@ -78,7 +78,72 @@ TEST_P(TreeMatcherPerformanceTest, For)
 }
 INSTANTIATE_TEST_CASE_P(Test, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
 
+struct ArrayMatcherPerformanceTest : testing::Test, testing::WithParamInterface<PerformanceTest> {};
+TEST_P(ArrayMatcherPerformanceTest, For)
+{
+	size_t totalMemory, freeMemory1, freeMemory2;
+	PerformanceTest testCase = GetParam();
+	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
+	srand(testCase.Seed);
 
+	IPSet modelSet;
+	modelSet.Load(testCase.Setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.SourceSet.Size);
+
+	ArrayMatcher matcher;
+	GpuAssert(cudaMemGetInfo(&freeMemory1, &totalMemory), "Cannot check memory usage");
+	matcher.BuildModel(modelSet);
+	GpuAssert(cudaMemGetInfo(&freeMemory2, &totalMemory), "Cannot check memory usage");
+
+	for (auto matchSetSize : testCase.MatchSubsetSize)
+		for (auto randomSize : testCase.RandomMasksSetSize)
+			for (auto usePresorting : testCase.PresortMatchSet)
+			{
+				int maskSubsetSize = (1 - randomSize) * matchSetSize;
+				int rndSetSize = randomSize * matchSetSize;
+				float presortingTime = 0;
+
+				IPSet matchSet;
+				if (maskSubsetSize == 0)
+				{
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet2;
+				}
+
+				if (rndSetSize == 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+					matchSet = matchSet1;
+				}
+
+				if (maskSubsetSize != 0 && rndSetSize != 0)
+				{
+					IPSet matchSet1;
+					matchSet1.RandomSubset(maskSubsetSize, modelSet);
+
+					IPSet matchSet2;
+					matchSet2.Generate(testCase.Setup, rndSetSize);
+					matchSet = matchSet1 + matchSet2;
+				}
+
+				if (usePresorting)
+				{
+					Timer timer;
+					timer.Start();
+					matchSet.Sort();
+					presortingTime = timer.Stop();
+				}
+				else
+					matchSet.Randomize();
+
+				Result result = matcher.Match(matchSet);
+
+				ENV.ArrayResultsFile << testCase << maskSubsetSize << ";" << rndSetSize << ";" << matcher.ModelBuildTime << ";";
+				ENV.ArrayResultsFile << usePresorting << ";" << presortingTime << ";" << result.MatchingTime << ";" << freeMemory1 - freeMemory2 << ";" << endl;
+			}
+}
+INSTANTIATE_TEST_CASE_P(Test, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
 
 struct RTreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<RTreeMatcherPerformanceTestCase> {};
 TEST_P(RTreeMatcherPerformanceTest, For)
@@ -157,71 +222,3 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 
 }
 INSTANTIATE_TEST_CASE_P(Test, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
-
-
-struct ArrayMatcherPerformanceTest : testing::Test, testing::WithParamInterface<PerformanceTest> {};
-TEST_P(ArrayMatcherPerformanceTest, For)
-{
-	size_t totalMemory, freeMemory1, freeMemory2;
-	PerformanceTest testCase = GetParam();
-	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
-	srand(testCase.Seed);
-
-	IPSet modelSet;
-	modelSet.Load(testCase.Setup, ENV.TestDataPath + testCase.SourceSet.FileName, testCase.SourceSet.Size);
-
-	ArrayMatcher matcher;
-	GpuAssert(cudaMemGetInfo(&freeMemory1, &totalMemory), "Cannot check memory usage");
-	matcher.BuildModel(modelSet);
-	GpuAssert(cudaMemGetInfo(&freeMemory2, &totalMemory), "Cannot check memory usage");
-
-	for (auto matchSetSize : testCase.MatchSubsetSize)
-		for (auto randomSize : testCase.RandomMasksSetSize)
-			for (auto usePresorting : testCase.PresortMatchSet)
-			{
-				int maskSubsetSize = (1 - randomSize) * matchSetSize;
-				int rndSetSize = randomSize * matchSetSize;
-				float presortingTime = 0;
-
-				IPSet matchSet;
-				if (maskSubsetSize == 0)
-				{
-					IPSet matchSet2;
-					matchSet2.Generate(testCase.Setup, rndSetSize);
-					matchSet = matchSet2;
-				}
-
-				if (rndSetSize == 0)
-				{
-					IPSet matchSet1;
-					matchSet1.RandomSubset(maskSubsetSize, modelSet);
-					matchSet = matchSet1;
-				}
-
-				if (maskSubsetSize != 0 && rndSetSize != 0)
-				{
-					IPSet matchSet1;
-					matchSet1.RandomSubset(maskSubsetSize, modelSet);
-
-					IPSet matchSet2;
-					matchSet2.Generate(testCase.Setup, rndSetSize);
-					matchSet = matchSet1 + matchSet2;
-				}
-
-				if (usePresorting)
-				{
-					Timer timer;
-					timer.Start();
-					matchSet.Sort();
-					presortingTime = timer.Stop();
-				}
-				else
-					matchSet.Randomize();
-
-				Result result = matcher.Match(matchSet);
-
-				ENV.ArrayResultsFile << testCase << maskSubsetSize << ";" << rndSetSize << ";" << matcher.ModelBuildTime << ";";
-				ENV.ArrayResultsFile << usePresorting << ";" << presortingTime << ";" << result.MatchingTime << ";" << freeMemory1 - freeMemory2 << ";" << endl;
-			}
-}
-INSTANTIATE_TEST_CASE_P(Test, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
