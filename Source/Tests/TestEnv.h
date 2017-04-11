@@ -121,7 +121,9 @@ public:
 	void InitPerformanceTests()
 	{
 		//vector<int> Seeds = { 5236, 1090, 9876, 4254, 7648, 5983, 5867, 3329, 7249 };
-		vector<int> Seeds = { 5983, 5867, 3329, 7249 };
+		//vector<int> Seeds = { 5983, 5867, 3329, 7249 };
+		//vector<int> Seeds = { 3329, 7249 };
+		vector<int> Seeds = { 5867 };
 		vector<int> MatchSetSize = { 250000, 500000, 750000, 1000000, 2500000, 5000000, 7500000, 10000000 };
 		vector<bool> UsePresorting = { false, true };
 		vector<float> RandomMasks = { 0, 0.25, 0.5, 0.75, 1 };

@@ -76,7 +76,7 @@ TEST_P(TreeMatcherPerformanceTest, For)
 	matcher.Tree.Dispose();
 	GpuAssert(cudaDeviceReset(), "Reseting device in test failed");
 }
-INSTANTIATE_TEST_CASE_P(Test, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
+//INSTANTIATE_TEST_CASE_P(Test, TreeMatcherPerformanceTest, testing::ValuesIn(ENV.TreeMatcherPerformanceTests));
 
 struct ArrayMatcherPerformanceTest : testing::Test, testing::WithParamInterface<PerformanceTest> {};
 TEST_P(ArrayMatcherPerformanceTest, For)
@@ -143,7 +143,7 @@ TEST_P(ArrayMatcherPerformanceTest, For)
 				ENV.ArrayResultsFile << usePresorting << ";" << presortingTime << ";" << result.MatchingTime << ";" << freeMemory1 - freeMemory2 << ";" << endl;
 			}
 }
-INSTANTIATE_TEST_CASE_P(Test, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
+//INSTANTIATE_TEST_CASE_P(Test, ArrayMatcherPerformanceTest, testing::ValuesIn(ENV.PerformanceTests));
 
 struct RTreeMatcherPerformanceTest : testing::Test, testing::WithParamInterface<RTreeMatcherPerformanceTestCase> {};
 TEST_P(RTreeMatcherPerformanceTest, For)
@@ -221,4 +221,23 @@ TEST_P(RTreeMatcherPerformanceTest, For)
 			}
 
 }
-INSTANTIATE_TEST_CASE_P(Test, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+//INSTANTIATE_TEST_CASE_P(Test, RTreeMatcherPerformanceTest, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));
+
+struct RTreeMatcherPerformanceTestSafe : testing::Test, testing::WithParamInterface<RTreeMatcherPerformanceTestCase> {};
+TEST_P(RTreeMatcherPerformanceTestSafe, For)
+{
+	RTreeMatcherPerformanceTestCase testCase = GetParam();
+
+	stringstream command;
+	command << "Runner.exe ";
+	command << testCase.Seed << " " << testCase.Setup.Blocks << " " << testCase.Setup.Threads << " " << testCase.Setup.DeviceID << " ";
+	command << ENV.TestDataPath << " " << testCase.SourceSet.FileName << " " << testCase.SourceSet.Size << " " << "Results.txt " << testCase.R.size() << " ";
+
+	for (int i = 0; i < testCase.R.size(); ++i)
+		command << testCase.R[i] << " ";
+	cout << command.str() << endl;
+
+	cout << system(command.str().c_str()) << endl;
+
+}
+INSTANTIATE_TEST_CASE_P(Test, RTreeMatcherPerformanceTestSafe, testing::ValuesIn(ENV.RTreeMatcherPerformanceTests));

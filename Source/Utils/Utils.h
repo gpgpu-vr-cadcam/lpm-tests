@@ -14,8 +14,8 @@ using namespace std;
 class LPMException : public exception
 {
 public:
-	explicit LPMException(char const* _Message)
-		: exception(_Message) {}
+	explicit LPMException()
+		: exception() {}
 };
 
 inline void GpuAssert(cudaError_t code, const char *msg)
@@ -26,7 +26,7 @@ inline void GpuAssert(cudaError_t code, const char *msg)
 		m.append(": ");
 		m.append(cudaGetErrorString(code));
 		cerr << m << "   Error code:" << code << endl;
-		throw LPMException(m.c_str());
+		throw LPMException();
 	}
 }
 
